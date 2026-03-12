@@ -1,0 +1,131 @@
+// apps/web/src/ui/components/sharepoint/SharePointUpload.tsx
+
+import React from "react";
+
+type Props = {
+  siteId?: string;
+  driveId?: string;
+  folderPath?: string;
+  disabled?: boolean;
+  onUploaded?: () => void;
+};
+
+export default function SharePointUpload({
+  siteId,
+  driveId,
+  folderPath,
+  disabled,
+  onUploaded,
+}: Props) {
+  const [busy, setBusy] = React.useState(false);
+  const [message, setMessage] = React.useState("");
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!siteId || !driveId) {
+      setMessage("Select a site and library first.");
+      e.target.value = "";
+      return;
+    }
+
+    setBusy(true);
+    setMessage("");
+
+    try {
+      const form = new FormData();
+      form.append("siteId", siteId);
+      form.append("driveId", driveId);
+      form.append("folderPath", folderPath || "");
+      form.append("file", file);
+
+      const res = await fetch("/sharepoint/upload", {
+        method: "POST",
+        credentials: "include",
+        body: form,
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Upload failed");
+      }
+
+      setMessage(`Uploaded: ${data?.item?.name || file.name}`);
+      onUploaded?.();
+    } catch (err: any) {
+      setMessage(err?.message || "Upload failed");
+    } finally {
+      setBusy(false);
+      e.target.value = "";
+    }
+  }
+
+  return (
+    <div
+      style={{
+        border: "1px solid #e5e7eb",
+        borderRadius: 14,
+        padding: 14,
+        background: "#fff",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 14 }}>
+            Upload to SharePoint
+          </div>
+          <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
+            Current folder: {folderPath ? `/${folderPath}` : "/"}
+          </div>
+        </div>
+
+        <label
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            background: disabled || busy ? "#e5e7eb" : "#002c55",
+            color: "#fff",
+            padding: "10px 14px",
+            borderRadius: 10,
+            cursor: disabled || busy ? "not-allowed" : "pointer",
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
+          <input
+            type="file"
+            onChange={handleFileChange}
+            disabled={disabled || busy}
+            style={{ display: "none" }}
+          />
+          {busy ? "Uploading..." : "Choose File"}
+        </label>
+      </div>
+
+      {message ? (
+        <div
+          style={{
+            marginTop: 12,
+            fontSize: 12,
+            color: message.toLowerCase().includes("failed")
+              ? "#b91c1c"
+              : "#166534",
+          }}
+        >
+          {message}
+        </div>
+      ) : null}
+    </div>
+  );
+}

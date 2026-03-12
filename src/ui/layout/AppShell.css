@@ -1,0 +1,481 @@
+/* src/ui/layout/AppShell.css */
+
+:root {
+  --bg: #0b172f;
+  --text: #0f172a;
+  --muted: rgba(15, 23, 42, 0.62);
+
+  --navy: #002c55;
+  --accent: #3b82f6;
+  --accent2: #fd9d00;
+
+  --shadow-sm: 0 10px 24px rgba(2, 6, 23, 0.18);
+  --shadow-md: 0 26px 70px rgba(2, 6, 23, 0.35);
+
+  --font:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Inter, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+}
+
+/* Loading */
+.nlmLoading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(
+      1200px 700px at 20% 10%,
+      rgba(59, 130, 246, 0.18),
+      transparent 62%
+    ),
+    radial-gradient(
+      900px 600px at 80% 20%,
+      rgba(253, 157, 0, 0.14),
+      transparent 62%
+    ),
+    var(--bg);
+}
+
+.nlmLoadingInner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(12px);
+}
+
+.nlmLoadingMark {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--navy), rgba(59, 130, 246, 0.9));
+  color: #fff;
+  font-weight: 900;
+}
+
+.nlmLoadingTitle {
+  font-weight: 900;
+  letter-spacing: 0.2px;
+}
+.nlmLoadingSub {
+  margin-top: 2px;
+  color: rgba(15, 23, 42, 0.6);
+  font-size: 13px;
+}
+
+/* Shell */
+.nlmShell {
+  min-height: 100vh;
+  position: relative;
+  background:
+    radial-gradient(
+      1200px 700px at 22% 0%,
+      rgba(59, 130, 246, 0.18),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 600px at 88% 10%,
+      rgba(253, 157, 0, 0.13),
+      transparent 58%
+    ),
+    var(--bg);
+}
+
+.nlmBody {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Mobile floating toggle */
+.nlmFloatToggle {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 60;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 18px 48px rgba(2, 6, 23, 0.45);
+  cursor: pointer;
+}
+
+.nlmFloatToggle:hover {
+  transform: translateY(-1px);
+}
+
+/* Backdrop */
+.nlmBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(2, 6, 23, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* Sidebar base */
+.nlmSidebar {
+  width: 280px;
+
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(14px);
+  transition:
+    width 180ms ease,
+    transform 180ms ease;
+}
+
+.nlmSidebarInner {
+  /* height: 100vh; */
+  height: 100%;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #fff;
+}
+
+/* ✅ Desktop closed state = rail */
+.nlmSidebarClosed {
+  width: 86px;
+}
+
+/* Header row (default open) */
+.nlmSidebarHeaderRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Toggle */
+.nlmIconBtn {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.1) !important;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 20px rgba(2, 6, 23, 0.1);
+  cursor: pointer;
+  flex: 0 0 auto;
+  color: #002c55 !important;
+}
+
+.nlmIconBtn:hover {
+  transform: translateY(-1px);
+}
+
+/* Brand card */
+.nlmBrandCard {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  /* padding: 12px; */
+  border-radius: 16px;
+  /* border: 1px solid rgba(0, 44, 85, 0.14); */
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.nlmBrandMark {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: var(--navy);
+  color: #fff;
+  font-weight: 1000;
+  flex: 0 0 auto;
+}
+
+.nlmBrandCardText {
+  min-width: 0;
+}
+
+.nlmBrandCardTitle {
+  font-weight: 1000;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #3b82f6;
+}
+
+.nlmBrandCardSub {
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.62);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Nav */
+.nlmNavTitle {
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.6);
+  font-weight: 900;
+  letter-spacing: 0.2px;
+}
+
+.nlmNav {
+  display: grid;
+  gap: 8px;
+}
+
+.nlmNavItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 14px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 10px 20px rgba(2, 6, 23, 0.1);
+}
+
+.nlmNavItem:hover {
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 12px 26px rgba(2, 6, 23, 0.1);
+  transform: translateY(-1px);
+}
+
+.nlmNavItemActive {
+  border-color: rgba(59, 130, 246, 0.22);
+  background: linear-gradient(
+    180deg,
+    rgba(59, 130, 246, 0.18),
+    rgba(59, 130, 246, 0.1)
+  );
+}
+
+.nlmNavIcon {
+  width: 26px;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.nlmNavLabel {
+  font-weight: 600;
+  color: #002c55 !important;
+}
+
+/* Footer pinned bottom */
+.nlmSidebarFooter {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  position: sticky;
+  bottom: 0;
+}
+
+/* Signed card */
+.nlmSignedCard {
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 14px 34px rgba(2, 6, 23, 0.1);
+}
+
+.nlmSignedTitle {
+  font-size: 12px;
+  color: #000;
+  font-weight: 600;
+}
+
+.nlmSignedName {
+  font-weight: 600;
+  margin-top: 6px;
+  color: #002c55 !important;
+  font-size: 14px;
+}
+.nlmSignedMeta {
+  font-size: 13px;
+  color: #000;
+  margin-top: 3px;
+}
+.nlmSignedRole {
+  font-size: 12px;
+  color: #002c55;
+  margin-top: 3px;
+  text-transform: capitalize;
+}
+
+.nlmSignedLogout {
+  width: 100%;
+  margin-top: 10px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  /* background: rgba(59, 130, 246, 0.12); */
+  background: rgb(231, 38, 38);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.nlmSignedLogout:hover {
+  background: rgba(59, 130, 246, 0.16);
+  color: #002c55;
+}
+
+/* ✅ NEW: Desktop collapsed layout fixes */
+.nlmSidebarClosed .nlmSidebarHeaderRow {
+  flex-direction: column; /* brand card stacks under toggle */
+  align-items: center;
+  gap: 10px;
+}
+
+.nlmSidebarClosed .nlmBrandCard {
+  width: 100%;
+  justify-content: center;
+  padding: 10px;
+}
+
+.nlmSidebarClosed .nlmBrandCardText,
+.nlmSidebarClosed .nlmNavTitle,
+.nlmSidebarClosed .nlmNavLabel {
+  display: none;
+}
+
+.nlmSidebarClosed .nlmNavItem {
+  justify-content: center;
+  padding: 10px;
+}
+
+.nlmSidebarClosed .nlmNavIcon {
+  width: auto;
+}
+
+/* ✅ Logout icon button (desktop collapsed footer) */
+.nlmLogoutIcon {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 32px rgba(2, 6, 23, 0.12);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 900;
+  color: rgba(15, 23, 42, 0.75);
+  margin: 0 auto; /* center in rail */
+}
+
+.nlmLogoutIcon:hover {
+  transform: translateY(-1px);
+}
+
+/* Main */
+.nlmMain {
+  flex: 1;
+  padding: 16px;
+  min-width: 0;
+  background-color: #ffff !important;
+}
+
+.nlmPageSurface {
+  width: 100%;
+  min-height: calc(100vh - 32px);
+  border-radius: 22px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.22),
+    rgba(255, 255, 255, 0.14)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 5px 15px rgba(2, 6, 23, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.1) inset;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 18px;
+}
+
+/* ✅ Mobile: overlay + closed = off-canvas */
+@media (max-width: 980px) {
+  .nlmSidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 50;
+    background-color: #fff !important;
+    box-shadow: 18px 0 50px rgba(2, 6, 23, 0.45);
+  }
+
+  .nlmSidebarClosed {
+    width: 280px;
+    transform: translateX(-110%);
+  }
+  .nlmFloatToggle {
+    color: #002c55 !important;
+    border: solid 1px #002c55;
+  }
+}
+
+/* Sidebar workspace action */
+.nlmSidebarActions {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.nlmSidebarActionBtn {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), #f8fbff);
+  cursor: pointer;
+}
+
+.nlmSidebarActionBtn:hover {
+  transform: translateY(-1px);
+}
+
+/* collapsed desktop support */
+.nlmSidebarClosed .nlmSidebarActions .nlmNavTitle {
+  display: none;
+}
+
+.nlmSidebarClosed .nlmSidebarActionBtn {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.nlmSidebarClosed .nlmSidebarActionBtn .nlmNavLabel {
+  display: none;
+}
+
+.nlmSidebarClosed .nlmSidebarActionBtn .nlmNavIcon {
+  margin-right: 0;
+}

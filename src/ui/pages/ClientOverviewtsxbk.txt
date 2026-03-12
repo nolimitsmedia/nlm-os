@@ -1,0 +1,127 @@
+// apps/web/src/ui/pages/ClientOverview.tsx
+import React from "react";
+import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { fetchClientOverview } from "../../api";
+import "./ClientOverview.css";
+
+function StatCard({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="statCard">
+      <div className="statLabel">{label}</div>
+      <div className="statValue">{value}</div>
+    </div>
+  );
+}
+
+export default function ClientOverview() {
+  const { clientId = "" } = useParams();
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["client-overview", clientId],
+    queryFn: () => fetchClientOverview(clientId),
+    enabled: !!clientId,
+  });
+
+  if (isLoading) return <div>Loading overview…</div>;
+  if (isError) return <div>Failed to load overview.</div>;
+
+  const s = data?.summary || {
+    mrr: 0,
+    balance_due: 0,
+    open_invoices: 0,
+    overdue_invoices: 0,
+  };
+
+  const billing = data?.health?.billing || "unknown";
+  const riskScore = data?.health?.riskScore ?? 0;
+
+  return (
+    <div className="overview">
+      <div className="statsRow">
+        <StatCard label="MRR" value={`$${Number(s.mrr).toLocaleString()}`} />
+        <StatCard
+          label="Balance Due"
+          value={`$${Number(s.balance_due).toLocaleString()}`}
+        />
+        <StatCard label="Open Invoices" value={Number(s.open_invoices)} />
+        <StatCard label="Overdue" value={Number(s.overdue_invoices)} />
+      </div>
+
+      <div className="grid2">
+        <div className="panel">
+          <div className="panelTitleRow">
+            <div className="panelTitle">Billing Snapshot</div>
+          </div>
+
+          <div className="panelSub">
+            Status: <b>{billing}</b> • Risk Score: <b>{riskScore}</b>
+            {data?.note ? (
+              <span style={{ display: "block", marginTop: 6, opacity: 0.8 }}>
+                {data.note}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="panelBodyPlaceholder" />
+        </div>
+
+        <div className="panel">
+          <div className="panelTitleRow">
+            <div className="panelTitle">Timeline</div>
+          </div>
+          <div className="panelSub">Recent billing events</div>
+
+          <div
+            style={{
+              display: "grid",
+              gap: 10,
+              paddingTop: 10,
+              paddingLeft: 10,
+            }}
+          >
+            {(data?.timeline || []).map((t: any) => (
+              <div
+                key={t.id}
+                style={{
+                  border: "1px solid var(--border)",
+                  background: "var(--panel2)",
+                  borderRadius: 14,
+                  padding: 12,
+                }}
+              >
+                <div style={{ fontWeight: 800 }}>{t.type}</div>
+                <div style={{ opacity: 0.75, fontSize: 12 }}>{t.when}</div>
+                <div style={{ marginTop: 6 }}>{t.note}</div>
+              </div>
+            ))}
+
+            {!data?.timeline?.length ? (
+              <div style={{ opacity: 0.7 }}>No timeline events yet.</div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="panel">
+          <div className="panelTitleRow">
+            <div className="panelTitle">Tickets</div>
+          </div>
+          <div className="panelSub">
+            Phase 2 placeholder — will connect to helpdesk.
+          </div>
+          <div className="panelBodyPlaceholder" />
+        </div>
+
+        <div className="panel">
+          <div className="panelTitleRow">
+            <div className="panelTitle">Projects</div>
+          </div>
+          <div className="panelSub">
+            Phase 2 placeholder — ClickUp/PM sync later.
+          </div>
+          <div className="panelBodyPlaceholder" />
+        </div>
+      </div>
+    </div>
+  );
+}

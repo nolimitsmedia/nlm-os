@@ -1,0 +1,534 @@
+/* apps/web/src/ui/pages/ClientOverview.css */
+
+.overview {
+  display: grid;
+  gap: 14px;
+}
+
+/* ===== Stats row ===== */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.statCard {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(11, 23, 47, 0.1);
+  box-shadow:
+    0 14px 34px rgba(2, 6, 23, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.85) inset;
+  padding: 16px 16px 14px;
+  min-height: 92px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    border-color 140ms ease;
+}
+
+.statCard:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 18px 42px rgba(2, 6, 23, 0.12),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  border-color: rgba(11, 23, 47, 0.14);
+}
+
+/* requested: label more prominent */
+.statLabel {
+  font-size: 15px;
+  font-weight: 1000;
+  color: #25324a;
+  letter-spacing: -0.15px;
+  line-height: 1.2;
+}
+
+.statValue {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.1px;
+  color: rgba(11, 23, 47, 0.82);
+  line-height: 1.25;
+}
+
+/* ===== Panels grid ===== */
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.panel {
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(11, 23, 47, 0.1);
+  box-shadow:
+    0 5px 6px rgba(2, 6, 23, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.85) inset;
+  overflow: hidden;
+  min-height: 168px;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    border-color 140ms ease;
+}
+
+.panel:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 22px 46px rgba(2, 6, 23, 0.12),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  border-color: rgba(11, 23, 47, 0.14);
+}
+
+.panelTitleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 16px 8px;
+}
+
+.panelTitle {
+  font-size: 14px;
+  font-weight: 1000;
+  letter-spacing: -0.1px;
+  color: #25324a;
+}
+
+.panelSub {
+  padding: 0 16px 12px;
+  font-size: 13px;
+  color: rgba(11, 23, 47, 0.72);
+  line-height: 1.45;
+}
+
+/* Placeholder blocks / empty content */
+.panelBodyPlaceholder {
+  height: 96px;
+  margin: 0 16px 16px;
+  border-radius: 16px;
+  border: 1px dashed rgba(11, 23, 47, 0.1);
+  background: linear-gradient(
+    180deg,
+    rgba(245, 247, 251, 0.96),
+    rgba(238, 242, 247, 0.92)
+  );
+}
+
+/* Improve forms that render inside panels */
+.panel input,
+.panel textarea,
+.panel select {
+  width: calc(100% - 32px);
+  /* margin: 0 16px 10px; */
+  /* padding: 12px 14px; */
+  border-radius: 14px;
+  border: 1px solid rgba(11, 23, 47, 0.1);
+  background: rgba(248, 250, 252, 0.95);
+  color: #0b172f;
+  outline: none;
+  box-shadow: inset 0 1px 2px rgba(2, 6, 23, 0.03);
+}
+
+.panel input::placeholder,
+.panel textarea::placeholder {
+  color: rgba(11, 23, 47, 0.4);
+}
+
+.panel input:focus,
+.panel textarea:focus,
+.panel select:focus {
+  border-color: rgba(253, 157, 0, 0.42);
+  box-shadow:
+    0 0 0 3px rgba(253, 157, 0, 0.12),
+    inset 0 1px 2px rgba(2, 6, 23, 0.03);
+}
+
+.panel button {
+  width: calc(100% - 32px);
+  margin: 0 16px 12px;
+  min-height: 42px;
+  border-radius: 14px;
+  border: 1px solid rgba(253, 157, 0, 0.45);
+  background: linear-gradient(
+    180deg,
+    rgba(253, 157, 0, 0.16),
+    rgba(253, 157, 0, 0.1)
+  );
+  color: #9a6200;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(2, 6, 23, 0.05);
+}
+
+.panel button:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(253, 157, 0, 0.22),
+    rgba(253, 157, 0, 0.14)
+  );
+}
+
+.panel button:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+/* General text inside panels */
+.panel p,
+.panel div,
+.panel span,
+.panel small,
+.panel li {
+  color: rgba(11, 23, 47, 0.84);
+}
+
+.panel small {
+  color: rgba(11, 23, 47, 0.58);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1100px) {
+  .statsRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .statsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .statCard,
+  .panel {
+    border-radius: 16px;
+  }
+
+  .panelTitleRow {
+    padding: 14px 14px 8px;
+  }
+
+  .panelSub {
+    padding: 0 14px 12px;
+  }
+
+  .panelBodyPlaceholder {
+    margin: 0 14px 14px;
+  }
+
+  .panel input,
+  .panel textarea,
+  .panel select,
+  .panel button {
+    width: calc(100% - 28px);
+    margin-left: 14px;
+    margin-right: 14px;
+  }
+}
+
+.addTask:hover {
+  background-color: rgb(0, 102, 255) !important;
+}
+
+.overviewTaskSubRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.overviewAddTaskBtn {
+  width: auto !important;
+  margin: 0 !important;
+  min-width: 128px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px !important;
+  border: 1px solid rgba(1, 44, 86, 0.16) !important;
+  background: #fff !important;
+  color: #012c56 !important;
+  font-weight: 800 !important;
+}
+
+.overviewTaskDrawerOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: flex-end;
+  padding: 18px;
+  border-radius: 20px;
+}
+
+.overviewTaskDrawer {
+  width: 100%;
+  /* height: calc(100vh - 36px); */
+  height: 100%;
+  border-radius: 24px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, #ffffff, #fbfcff);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+}
+
+.overviewTaskDrawerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.overviewTaskDrawerTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.overviewTaskDrawerMeta {
+  margin-top: 6px;
+  color: rgba(15, 23, 42, 0.64);
+  font-size: 13px;
+}
+
+.overviewTaskDrawerClose {
+  width: auto !important;
+  margin: 0 !important;
+  min-height: auto !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #334155 !important;
+  font-size: 20px;
+  padding: 0 !important;
+  cursor: pointer;
+}
+
+.overviewTaskDrawerBody {
+  overflow: auto;
+  padding: 22px 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.overviewTaskField {
+  display: grid;
+  gap: 8px;
+}
+
+.overviewTaskFieldFull {
+  width: 100%;
+}
+
+.overviewTaskField label {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.56);
+}
+
+.overviewTaskField input,
+.overviewTaskField textarea,
+.overviewTaskField select {
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.overviewTaskField input,
+.overviewTaskField select {
+  height: 48px;
+  padding: 0 14px;
+}
+
+.overviewTaskField textarea {
+  min-height: 190px;
+  resize: vertical;
+  padding: 14px;
+  font-family: inherit;
+  line-height: 1.45;
+}
+
+.overviewTaskSelectWrap {
+  position: relative;
+}
+
+.overviewTaskSelectWrap select {
+  appearance: none;
+  padding-right: 42px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #012c56 50%),
+    linear-gradient(135deg, #012c56 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 12px) calc(50% - 3px);
+  background-size:
+    6px 6px,
+    6px 6px;
+  background-repeat: no-repeat;
+}
+
+.overviewTaskUploadBox {
+  width: 100%;
+  min-height: 132px;
+  border-radius: 18px;
+  border: 1px dashed rgba(1, 44, 86, 0.22);
+  background: linear-gradient(180deg, #ffffff, #f7faff);
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  padding: 18px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.overviewTaskUploadBox input {
+  display: none;
+}
+
+.overviewTaskUploadBox span {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  color: #012c56;
+}
+
+.overviewUploadIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(1, 44, 86, 0.08);
+  font-style: normal;
+}
+
+.overviewTaskUploadBox small {
+  color: rgba(15, 23, 42, 0.62);
+}
+
+.overviewTaskPendingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.overviewTaskPendingCard {
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+}
+
+.overviewTaskPendingName {
+  font-weight: 800;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.overviewTaskPendingMeta {
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.62);
+}
+
+.overviewTaskRemoveBtn {
+  width: auto !important;
+  margin: 0 !important;
+  min-height: 38px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(185, 28, 28, 0.16) !important;
+  background: rgba(254, 242, 242, 0.95) !important;
+  color: #b42318 !important;
+}
+
+.overviewTaskUploadProgress {
+  position: relative;
+  margin-top: 12px;
+  height: 38px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(226, 232, 240, 0.8);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.overviewTaskUploadProgressBar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, #012c56, #0ea5e9);
+  transition: width 180ms ease;
+}
+
+.overviewTaskUploadProgress span {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.overviewTaskDrawerFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 18px 24px 22px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, #fbfcff, #ffffff);
+}
+
+.overviewTaskSecondaryBtn,
+.overviewTaskPrimaryBtn {
+  width: auto !important;
+  margin: 0 !important;
+  min-height: 44px !important;
+  padding: 0 16px !important;
+  border-radius: 14px !important;
+}
+
+.overviewTaskSecondaryBtn {
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  background: #fff !important;
+  color: #0f172a !important;
+}
+
+.overviewTaskPrimaryBtn {
+  border: 1px solid rgba(1, 44, 86, 0.18) !important;
+  background: #012c56 !important;
+  color: #fff !important;
+}
+
+@media (max-width: 980px) {
+  .overviewTaskDrawerOverlay {
+    padding: 10px;
+  }
+
+  .overviewTaskDrawer {
+    height: calc(100vh - 20px);
+    border-radius: 20px;
+  }
+}

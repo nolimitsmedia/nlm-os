@@ -1,0 +1,188 @@
+/* src/ui/components/AddTaskDrawer.css */
+
+.nlmAddTaskDrawerOverlay {
+  z-index: 110;
+  background: rgba(2, 6, 23, 0.52);
+}
+
+.nlmAddTaskDrawerSheet {
+  top: 26px;
+  right: 26px;
+  bottom: 26px;
+  left: 26px;
+}
+
+.nlmAddTaskDrawerBody {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 24px;
+}
+
+.nlmAddTaskGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  max-width: 900px;
+  margin: 0 auto;
+  gap: 16px;
+}
+
+.nlmAddTaskField {
+  display: grid;
+  gap: 8px;
+}
+
+.nlmAddTaskFieldFull {
+  grid-column: 1 / -1;
+}
+
+.nlmAddTaskField label {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(15, 23, 42, 0.72);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.nlmAddTaskField input,
+.nlmAddTaskField textarea,
+.nlmAddTaskField select {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 14px;
+  background: #fff;
+  color: #0f172a;
+  padding: 12px 14px;
+  font: inherit;
+  outline: none;
+}
+
+.nlmAddTaskField textarea {
+  resize: vertical;
+  min-height: 220px;
+}
+
+.nlmAddTaskField input:focus,
+.nlmAddTaskField textarea:focus,
+.nlmAddTaskField select:focus {
+  border-color: rgba(59, 130, 246, 0.55);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
+}
+
+.nlmAddTaskUploadBox {
+  border: 1px dashed rgba(15, 23, 42, 0.16);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.92), #fff);
+  border-radius: 18px;
+  padding: 22px;
+  min-height: 126px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.nlmAddTaskUploadBox input {
+  display: none;
+}
+
+.nlmAddTaskUploadBox span {
+  font-weight: 900;
+  color: #002c55;
+}
+
+.nlmAddTaskUploadBox small {
+  color: rgba(15, 23, 42, 0.6);
+}
+
+.nlmAddTaskPendingGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.nlmAddTaskPendingCard {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.nlmAddTaskPendingName {
+  font-weight: 800;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.nlmAddTaskPendingMeta {
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.62);
+}
+
+.nlmAddTaskRemoveBtn {
+  justify-self: flex-start;
+  border: 1px solid rgba(180, 35, 24, 0.15);
+  background: #fff;
+  color: #b42318;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.nlmAddTaskUploadProgress {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.nlmAddTaskUploadProgressBar {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #002c55, #3b82f6);
+  transition: width 160ms ease;
+}
+
+.nlmAddTaskUploadProgress span {
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.64);
+}
+
+.nlmAddTaskError {
+  grid-column: 1 / -1;
+  border: 1px solid rgba(180, 35, 24, 0.14);
+  background: rgba(180, 35, 24, 0.05);
+  color: #b42318;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .nlmAddTaskDrawerSheet {
+    top: 14px;
+    right: 14px;
+    bottom: 14px;
+    left: 14px;
+  }
+
+  .nlmAddTaskGrid,
+  .nlmAddTaskPendingGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .nlmAddTaskDrawerBody {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+.nlmAddTaskDrawer-ind {
+  display: flex;
+  flex-direction: column !important;
+  width: 70%;
+  margin: 0 auto;
+}

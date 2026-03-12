@@ -1,0 +1,277 @@
+// apps/web/src/ui/pages/Client360.tsx
+import React from "react";
+import { useParams, Outlet } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { fetchClient, fetchClientInsights } from "../../api";
+import AICopilot from "../components/AICopilot";
+import "./Client360.css";
+
+function money(n?: number | null) {
+  return Number(n ?? 0).toLocaleString(undefined, {
+    style: "currency",
+    currency: "USD",
+  });
+}
+
+export default function Client360() {
+  const { clientId = "" } = useParams();
+
+  const { data: client, isLoading } = useQuery({
+    queryKey: ["client", clientId],
+    queryFn: () => fetchClient(clientId),
+    enabled: !!clientId,
+  });
+
+  const { data: insights } = useQuery({
+    queryKey: ["client-insights", clientId],
+    queryFn: () => fetchClientInsights(clientId),
+    enabled: !!clientId,
+    staleTime: 60_000,
+  });
+
+  if (isLoading) return <div>Loading Client 360…</div>;
+
+  const name = (client as any)?.name || clientId;
+  const status = (client as any)?.status || "active";
+
+  const statusLabel = String(status).replace("_", " ");
+  const statusTone =
+    status === "at_risk" ? "warn" : status === "inactive" ? "dim" : "ok";
+
+  return (
+    <div className="c360Wrap">
+      <div className="c360Main">
+        <div className="c360Header">
+          <div className="c360HeaderLeft">
+            <div className="c360TitleRow">
+              <div className="c360Title">{name}</div>
+              <span className={`c360Badge ${statusTone}`}>{statusLabel}</span>
+            </div>
+            <div className="c360Meta">Client 360 • Overview</div>
+          </div>
+        </div>
+
+        {insights ? (
+          <div
+            style={{
+              marginBottom: 18,
+              padding: 18,
+              borderRadius: 18,
+              border: "1px solid rgba(15, 23, 42, 0.08)",
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,250,252,0.96) 100%)",
+              boxShadow: "0 10px 30px rgba(15,23,42,0.05)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 16,
+                flexWrap: "wrap",
+                marginBottom: 14,
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "#64748b",
+                    marginBottom: 4,
+                  }}
+                >
+                  AI Client Health
+                </div>
+                <div
+                  style={{
+                    fontSize: 24,
+                    fontWeight: 700,
+                    color: "#0f172a",
+                    marginBottom: 6,
+                  }}
+                >
+                  {insights.summary || "AI client health overview"}
+                </div>
+                <div style={{ color: "#64748b", fontSize: 14 }}>
+                  Real-time billing, risk, opportunity, and action signals.
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: 14,
+                    background: "#eff6ff",
+                    color: "#1d4ed8",
+                    fontWeight: 700,
+                    minWidth: 110,
+                  }}
+                >
+                  Health {insights.metrics?.health_score ?? 0}
+                </div>
+                <div
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: 14,
+                    background: "#f8fafc",
+                    color: "#0f172a",
+                    fontWeight: 700,
+                    minWidth: 110,
+                  }}
+                >
+                  Risk {insights.metrics?.risk_score ?? 0}
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                gap: 12,
+                marginBottom: 14,
+              }}
+            >
+              {[
+                {
+                  label: "MRR",
+                  value: money(insights.metrics?.mrr),
+                },
+                {
+                  label: "Balance Due",
+                  value: money(insights.metrics?.balance_due),
+                },
+                {
+                  label: "Open Invoices",
+                  value: String(insights.metrics?.open_invoices ?? 0),
+                },
+                {
+                  label: "Active Services",
+                  value: String(insights.metrics?.active_services ?? 0),
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  style={{
+                    border: "1px solid rgba(15, 23, 42, 0.08)",
+                    borderRadius: 14,
+                    padding: 14,
+                    background: "#fff",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#64748b",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      marginBottom: 6,
+                    }}
+                  >
+                    {item.label}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 22,
+                      fontWeight: 700,
+                      color: "#0f172a",
+                    }}
+                  >
+                    {item.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)",
+                gap: 14,
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    marginBottom: 10,
+                    color: "#0f172a",
+                  }}
+                >
+                  Alerts
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 18, color: "#475569" }}>
+                  {(insights.alerts ?? []).slice(0, 4).map((item, idx) => (
+                    <li key={`${item}-${idx}`} style={{ marginBottom: 8 }}>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    marginBottom: 10,
+                    color: "#0f172a",
+                  }}
+                >
+                  Opportunities
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 18, color: "#475569" }}>
+                  {(insights.opportunities ?? [])
+                    .slice(0, 4)
+                    .map((item, idx) => (
+                      <li key={`${item}-${idx}`} style={{ marginBottom: 8 }}>
+                        {item}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    marginBottom: 10,
+                    color: "#0f172a",
+                  }}
+                >
+                  Next Best Actions
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 18, color: "#475569" }}>
+                  {(insights.next_best_actions ?? [])
+                    .slice(0, 4)
+                    .map((item, idx) => (
+                      <li key={`${item}-${idx}`} style={{ marginBottom: 8 }}>
+                        {item}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <Outlet />
+      </div>
+
+      <div className="c360Side">
+        <div className="c360SideInner">
+          <AICopilot clientId={clientId} clientName={name} status={status} />
+        </div>
+      </div>
+    </div>
+  );
+}

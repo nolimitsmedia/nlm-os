@@ -1,0 +1,618 @@
+/* apps/web/src/ui/pages/ClientsList.css */
+
+.nlmClientsPage {
+  display: grid;
+  gap: 14px;
+}
+
+.h1 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  letter-spacing: -0.2px;
+  color: #6f95de;
+}
+
+.nlmClientsSub {
+  font-size: 13px;
+  opacity: 0.75;
+  color: #000000;
+}
+
+.nlmClientsHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nlmClientsActions {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.nlmClientsSummaryRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.nlmStatCard {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(1, 44, 86, 0.09);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.95),
+    rgba(248, 251, 255, 0.9)
+  );
+  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.08);
+}
+
+.nlmStatLabel {
+  font-size: 12px;
+  color: rgba(1, 44, 86, 0.72);
+  margin-bottom: 6px;
+}
+
+.nlmStatValue {
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 900;
+  color: #012c56;
+}
+
+.nlmFilterBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nlmFilterGroup {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.nlmFilterChip {
+  border: 1px solid rgba(1, 44, 86, 0.12);
+  background: rgba(255, 255, 255, 0.82);
+  color: #012c56;
+  border-radius: 999px;
+  height: 40px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 22px rgba(2, 6, 23, 0.06);
+}
+
+.nlmFilterChip span {
+  display: inline-flex;
+  min-width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(1, 44, 86, 0.08);
+  color: #012c56;
+  font-size: 12px;
+}
+
+.nlmFilterChip:hover,
+.nlmFilterChip.isActive {
+  background: #012c56;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.nlmFilterChip:hover span,
+.nlmFilterChip.isActive span {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.nlmFilterNote {
+  font-size: 12px;
+  color: rgba(1, 44, 86, 0.7);
+}
+
+/* Search */
+.nlmSearchWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(1, 44, 86, 0.1);
+  background: rgba(255, 255, 255, 0.84);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.08);
+  min-width: min(420px, 86vw);
+}
+
+.nlmSearchIcon {
+  opacity: 0.85;
+  font-weight: 800;
+  color: #000000;
+}
+
+.nlmSearch {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #000000 !important;
+  font-size: 13px;
+}
+
+.nlmSearch::placeholder {
+  color: #000000;
+}
+
+.nlmSearchClear {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  border: 1px solid rgba(1, 44, 86, 0.1);
+  background: rgba(1, 44, 86, 0.06);
+  color: #012c56;
+  cursor: pointer;
+}
+
+.nlmSearchClear:hover {
+  background: rgba(1, 44, 86, 0.1);
+}
+
+/* Primary action */
+.nlmNewClientBtn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-weight: 900;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #012c56;
+  color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 14px 34px rgba(2, 6, 23, 0.18);
+}
+
+.nlmNewClientBtn:hover {
+  transform: translateY(-1px);
+  background: #0a447f;
+}
+
+.nlmHint {
+  opacity: 0.85;
+}
+
+/* Grid + cards */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 14px;
+}
+
+.clientCard {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  text-decoration: none;
+  border: 1px solid rgba(1, 44, 86, 0.08);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.96),
+    rgba(248, 251, 255, 0.94)
+  );
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow:
+    0 12px 30px rgba(2, 6, 23, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.75) inset;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.clientCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px rgba(2, 6, 23, 0.1);
+  border-color: rgba(1, 44, 86, 0.14);
+}
+
+.clientTopRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.clientIdentityWrap {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.clientLeft {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.clientName {
+  font-weight: 900;
+  color: #012c56;
+  line-height: 1.15;
+  font-size: 15px;
+}
+
+.clientMeta {
+  font-size: 12px;
+  color: #3f4f63;
+  line-height: 1.45;
+}
+
+.clientBadgeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.clientSourceBadge,
+.clientMiniBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.clientSourceBadge.whmcs {
+  background: rgba(1, 44, 86, 0.08);
+  color: #012c56;
+  border: 1px solid rgba(1, 44, 86, 0.12);
+}
+
+.clientSourceBadge.local {
+  background: rgba(253, 157, 0, 0.12);
+  color: #9b5b00;
+  border: 1px solid rgba(253, 157, 0, 0.2);
+}
+
+.clientMiniBadge {
+  background: rgba(75, 165, 255, 0.12);
+  color: #0a4f88;
+  border: 1px solid rgba(75, 165, 255, 0.14);
+}
+
+.clientStatsRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.clientStatBox {
+  display: grid;
+  gap: 4px;
+  padding: 10px 11px;
+  border-radius: 14px;
+  background: rgba(1, 44, 86, 0.035);
+  border: 1px solid rgba(1, 44, 86, 0.06);
+}
+
+.clientStatLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(1, 44, 86, 0.62);
+}
+
+.clientStatBox strong {
+  color: #012c56;
+  font-size: 14px;
+}
+
+/* Status pills */
+.pill {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  text-transform: capitalize;
+  white-space: nowrap;
+  font-weight: 800;
+}
+
+.pill.active {
+  border-color: rgba(46, 204, 113, 0.4);
+  color: rgba(23, 135, 71, 0.95);
+  background: rgba(46, 204, 113, 0.1);
+}
+
+.pill.at_risk {
+  border-color: rgba(241, 196, 15, 0.42);
+  color: rgba(176, 128, 0, 0.95);
+  background: rgba(241, 196, 15, 0.1);
+}
+
+.pill.inactive {
+  border-color: rgba(148, 163, 184, 0.3);
+  color: rgba(88, 102, 120, 0.95);
+  background: rgba(148, 163, 184, 0.1);
+}
+
+/* Empty state */
+.nlmEmpty {
+  border-radius: 18px;
+  padding: 18px;
+  border: 1px solid rgba(1, 44, 86, 0.08);
+  background: rgba(255, 255, 255, 0.84);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 18px 46px rgba(2, 6, 23, 0.08);
+  max-width: 720px;
+}
+
+.nlmEmptyTitle {
+  font-weight: 1000;
+  color: #012c56;
+  margin-bottom: 6px;
+}
+
+.nlmEmptySub {
+  color: #5a697b;
+  font-size: 13px;
+}
+
+/* ===== NLM Modal (kept same class names, adjusted to match your glass UI) ===== */
+
+.nlmModalOverlay {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(
+      1200px 600px at 50% 35%,
+      rgba(255, 255, 255, 0.08),
+      rgba(0, 0, 0, 0.62)
+    ),
+    rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+  padding: 18px;
+  backdrop-filter: blur(6px);
+}
+
+.nlmModal {
+  width: min(560px, 92vw);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #fff;
+  box-shadow:
+    0 18px 60px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  overflow: hidden;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.nlmModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px 12px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #000000;
+}
+
+.nlmModalTitle {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  color: #012c56;
+}
+
+.nlmModalSub {
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.75;
+  color: #000;
+}
+
+.nlmIconBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #000;
+  cursor: pointer;
+}
+
+.nlmIconBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nlmModalBody {
+  padding: 16px 18px 18px 18px;
+  color: #000 !important;
+}
+
+.nlmFormGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.nlmField {
+  display: grid;
+  gap: 6px;
+}
+
+.nlmLabel {
+  font-size: 12px;
+  opacity: 0.75;
+  color: #000;
+}
+
+.nlmInput,
+.nlmSelect {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #000;
+  outline: none;
+  box-shadow: 0 5px 6px rgba(2, 6, 23, 0.06);
+}
+
+.nlmSelect option {
+  background-color: #fff !important;
+  border: 5px !important;
+}
+
+.nlmInput::placeholder {
+  color: #000;
+}
+
+.nlmInput:focus,
+.nlmSelect:focus {
+  border-color: rgba(253, 157, 0, 0.35);
+  box-shadow: 0 0 0 1px rgba(253, 157, 0, 0.12);
+}
+
+.nlmError {
+  color: #b42318;
+  background: rgba(252, 165, 165, 0.16);
+  border: 1px solid rgba(252, 165, 165, 0.26);
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+
+.nlmModalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+  padding-top: 10px;
+}
+
+.nlmBtnSecondary,
+.nlmBtnPrimary {
+  padding: 10px 14px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-weight: 900;
+  border: 1px solid #012c56;
+  background: rgba(255, 255, 255, 0.06);
+  color: #000;
+}
+
+.nlmBtnSecondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nlmBtnPrimary {
+  border-color: rgba(253, 157, 0, 0.35);
+  background: rgba(253, 157, 0, 0.12);
+}
+
+.nlmBtnPrimary:hover {
+  background: rgba(253, 157, 0, 0.16);
+}
+
+.nlmBtnPrimary:disabled,
+.nlmBtnSecondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Animations */
+@keyframes nlmOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nlmModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.nlmModalOverlay {
+  animation: nlmOverlayIn 160ms ease-out;
+}
+.nlmModal {
+  animation: nlmModalIn 180ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nlmModalOverlay,
+  .nlmModal,
+  .clientCard,
+  .nlmFilterChip,
+  .nlmNewClientBtn {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Responsive tweaks */
+@media (max-width: 1024px) {
+  .nlmClientsSummaryRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .nlmSearchWrap {
+    min-width: min(520px, 92vw);
+  }
+
+  .nlmClientsSummaryRow {
+    grid-template-columns: 1fr;
+  }
+
+  .nlmFilterBar {
+    align-items: flex-start;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .clientStatsRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

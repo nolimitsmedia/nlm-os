@@ -1,0 +1,1139 @@
+// src/ui/components/TaskDisplayDrawer.tsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  deleteTask,
+  fetchClients,
+  fetchTaskAssignees,
+  fetchTasks,
+  updateTaskDetails,
+  type ClickUpAssignee,
+  type Client,
+} from "../../api";
+import AddTaskDrawer from "./AddTaskDrawer";
+import TaskDetailsDrawer from "./TaskDetailsDrawer";
+import Toast from "./Toast";
+import "./Toast.css";
+import "./TaskDisplayDrawer.css";
+
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  initialClientId?: string;
+};
+
+type ToastState = {
+  open: boolean;
+  type: "success" | "error" | "info";
+  message: string;
+};
+
+type ViewMode = "list" | "board";
+
+type TaskDraft = {
+  title: string;
+  description: string;
+  status: string;
+  assignee: string;
+  assignees: string[];
+  dueDate: string;
+};
+
+const EMPTY_TOAST: ToastState = {
+  open: false,
+  type: "info",
+  message: "",
+};
+
+const ALL_CLIENTS_VALUE = "all";
+
+const STATUS_OPTIONS = [
+  "not started",
+  "open",
+  "to do",
+  "in progress",
+  "on hold",
+  "review",
+  "complete",
+  "completed",
+  "closed",
+];
+
+const BOARD_COLUMNS = [
+  { key: "not started", label: "Not Started" },
+  { key: "in progress", label: "In Progress" },
+  { key: "review", label: "Review" },
+  { key: "completed", label: "Completed" },
+];
+
+function normalizeStatus(value: any) {
+  const v = String(value?.status || value || "not started")
+    .trim()
+    .toLowerCase();
+
+  if (v === "complete" || v === "closed") return "completed";
+  if (v === "to-do") return "to do";
+  return v || "not started";
+}
+
+function parseDateValue(value: any) {
+  if (value === null || value === undefined || value === "") return null;
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value === "number") {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  if (/^\d{10,13}$/.test(raw)) {
+    const n = Number(raw);
+    const date = new Date(raw.length === 10 ? n * 1000 : n);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatDate(value: any) {
+  const date = parseDateValue(value);
+  if (!date) return "—";
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function toInputDate(value: any) {
+  const date = parseDateValue(value);
+  if (!date) return "";
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getTaskTitle(task: any) {
+  return (
+    task?.title ||
+    task?.name ||
+    task?.task_name ||
+    task?.subject ||
+    "Untitled Task"
+  );
+}
+
+function getTaskDescription(task: any) {
+  return (
+    task?.description || task?.details || task?.body || task?.content || ""
+  );
+}
+
+function getTaskAssignee(task: any) {
+  return (
+    task?.assignee ||
+    task?.assignee_name ||
+    task?.assigned_to ||
+    task?.owner ||
+    ""
+  );
+}
+
+function getTaskAssigneeIds(task: any) {
+  const direct = Array.isArray(task?.assignee_ids)
+    ? task.assignee_ids
+    : Array.isArray(task?.assigneeIds)
+      ? task.assigneeIds
+      : [];
+
+  if (direct.length) {
+    return direct
+      .map((value: any) => String(value || "").trim())
+      .filter(Boolean);
+  }
+
+  if (Array.isArray(task?.assignees)) {
+    return task.assignees
+      .map((item: any) =>
+        String(item?.id || item?.userid || item?.user_id || "").trim(),
+      )
+      .filter(Boolean);
+  }
+
+  const single =
+    task?.assignee_id || task?.assigneeId || task?.assignee_id_text || "";
+  return single ? [String(single).trim()] : [];
+}
+
+function getTaskId(task: any) {
+  return String(task?.id || task?.task_id || task?.clickup_task_id || "");
+}
+
+function getTaskClientId(task: any) {
+  return String(task?.client_id || task?.clientId || "").trim();
+}
+
+function normalizeClientKey(value: any) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
+function resolveClientFromTask(task: any, clients: Client[] = []) {
+  const raw = getTaskClientId(task);
+  if (!raw) return null;
+
+  return (
+    clients.find((client) => String(client.id).trim() === raw) ||
+    clients.find(
+      (client) => normalizeClientKey(client.name) === normalizeClientKey(raw),
+    ) ||
+    null
+  );
+}
+
+function getTaskDueDate(task: any) {
+  return task?.due_date || task?.dueDate || task?.date_due || null;
+}
+
+function getAssigneeLabel(item: ClickUpAssignee) {
+  return (
+    item.displayName || item.name || item.username || item.email || "Unassigned"
+  );
+}
+
+function getAssigneeInitials(label: string) {
+  const parts = String(label || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!parts.length) return "NA";
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase();
+}
+
+function isOverdue(task: any, draft?: TaskDraft) {
+  const value = draft?.dueDate || toInputDate(getTaskDueDate(task));
+  if (!value) return false;
+  const status = normalizeStatus(draft?.status || task?.status);
+  if (["completed", "closed", "complete"].includes(status)) return false;
+
+  const due = new Date(`${value}T23:59:59`);
+  const now = new Date();
+  return !Number.isNaN(due.getTime()) && due.getTime() < now.getTime();
+}
+
+function makeDraft(task: any): TaskDraft {
+  return {
+    title: getTaskTitle(task),
+    description: getTaskDescription(task),
+    status: normalizeStatus(task?.status),
+    assignee: getTaskAssignee(task),
+    assignees: getTaskAssigneeIds(task),
+    dueDate: toInputDate(getTaskDueDate(task)),
+  };
+}
+
+function matchesBoardColumn(status: string, columnKey: string) {
+  const s = normalizeStatus(status);
+  if (columnKey === "completed") {
+    return ["completed", "complete", "closed"].includes(s);
+  }
+  if (columnKey === "not started") {
+    return ["not started", "open", "to do"].includes(s);
+  }
+  return s === columnKey;
+}
+
+export default function TaskDisplayDrawer({
+  open,
+  onClose,
+  initialClientId = "",
+}: Props) {
+  const qc = useQueryClient();
+  const assigneeMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const [clientId, setClientId] = useState(
+    initialClientId || ALL_CLIENTS_VALUE,
+  );
+  const [clientSearch, setClientSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [busyTaskId, setBusyTaskId] = useState("");
+  const [toast, setToast] = useState<ToastState>(EMPTY_TOAST);
+  const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false);
+  const [drafts, setDrafts] = useState<Record<string, TaskDraft>>({});
+  const [assigneeMenuTaskId, setAssigneeMenuTaskId] = useState("");
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setClientId(initialClientId || ALL_CLIENTS_VALUE);
+  }, [open, initialClientId]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (!assigneeMenuTaskId) return;
+      if (
+        assigneeMenuRef.current &&
+        !assigneeMenuRef.current.contains(event.target as Node)
+      ) {
+        setAssigneeMenuTaskId("");
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [assigneeMenuTaskId]);
+
+  const showToast = (
+    type: ToastState["type"],
+    message: string,
+    sticky = false,
+  ) => {
+    setToast({ open: true, type, message });
+
+    if (!sticky) {
+      window.clearTimeout((showToast as any)._timer);
+      (showToast as any)._timer = window.setTimeout(() => {
+        setToast(EMPTY_TOAST);
+      }, 3200);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout((showToast as any)._timer);
+    };
+  }, []);
+
+  const clientsQ = useQuery({
+    queryKey: ["clients", "clickup-workspace"],
+    queryFn: () => fetchClients(),
+    enabled: open,
+    staleTime: 60_000,
+  });
+
+  const assigneesQ = useQuery({
+    queryKey: [
+      "task-assignees",
+      clientId === ALL_CLIENTS_VALUE ? "global" : clientId,
+    ],
+    queryFn: () =>
+      fetchTaskAssignees(
+        clientId && clientId !== ALL_CLIENTS_VALUE ? clientId : undefined,
+      ),
+    enabled: open,
+    staleTime: 60_000,
+  });
+
+  const tasksQ = useQuery({
+    queryKey: ["tasks", clientId || ALL_CLIENTS_VALUE],
+    queryFn: () => fetchTasks(clientId || ALL_CLIENTS_VALUE),
+    enabled: open && !!clientId,
+    refetchInterval: open ? 8000 : false,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    staleTime: 2000,
+  });
+
+  const clients = useMemo<Client[]>(
+    () => (Array.isArray(clientsQ.data) ? clientsQ.data : []),
+    [clientsQ.data],
+  );
+
+  const filteredClients = useMemo(() => {
+    const q = clientSearch.toLowerCase().trim();
+    if (!q) return clients;
+    return clients.filter((c) =>
+      String(c.name || "")
+        .toLowerCase()
+        .includes(q),
+    );
+  }, [clients, clientSearch]);
+
+  const assignees = useMemo<ClickUpAssignee[]>(
+    () => (Array.isArray(assigneesQ.data) ? assigneesQ.data : []),
+    [assigneesQ.data],
+  );
+
+  const assigneeMap = useMemo(() => {
+    const map = new Map<string, ClickUpAssignee>();
+    assignees.forEach((item) => map.set(String(item.id), item));
+    return map;
+  }, [assignees]);
+
+  const clientMap = useMemo(() => {
+    const map = new Map<string, Client>();
+    clients.forEach((client) => map.set(String(client.id), client));
+    return map;
+  }, [clients]);
+
+  const selectedClient =
+    clientId && clientId !== ALL_CLIENTS_VALUE
+      ? clientMap.get(String(clientId)) || null
+      : null;
+
+  const tasks = useMemo(() => {
+    const raw = (tasksQ.data as any)?.tasks;
+    return Array.isArray(raw) ? raw : [];
+  }, [tasksQ.data]);
+
+  useEffect(() => {
+    if (!tasks.length) {
+      setDrafts({});
+      return;
+    }
+
+    setDrafts((prev) => {
+      const next: Record<string, TaskDraft> = { ...prev };
+      for (const task of tasks) {
+        const id = getTaskId(task);
+        if (!id) continue;
+        next[id] = {
+          ...(next[id] || {}),
+          ...makeDraft(task),
+        };
+      }
+      return next;
+    });
+  }, [tasks]);
+
+  const filteredTasks = useMemo(() => {
+    const q = search.trim().toLowerCase();
+
+    return tasks.filter((task: any) => {
+      const draft = drafts[getTaskId(task)] || makeDraft(task);
+      const taskStatus = normalizeStatus(draft.status || task?.status);
+      const title = String(draft.title || getTaskTitle(task)).toLowerCase();
+      const desc = String(
+        draft.description || getTaskDescription(task),
+      ).toLowerCase();
+      const assigneeText = draft.assignees
+        .map((id) => assigneeMap.get(String(id)))
+        .filter(Boolean)
+        .map((item) => getAssigneeLabel(item as ClickUpAssignee))
+        .join(" ")
+        .toLowerCase();
+      const assignee = String(
+        assigneeText || draft.assignee || getTaskAssignee(task),
+      ).toLowerCase();
+      const resolvedClient = resolveClientFromTask(task, clients);
+      const clientName = String(
+        resolvedClient?.name || getTaskClientId(task) || "",
+      ).toLowerCase();
+
+      const statusMatch = statusFilter === "all" || taskStatus === statusFilter;
+      const textMatch =
+        !q ||
+        title.includes(q) ||
+        desc.includes(q) ||
+        assignee.includes(q) ||
+        taskStatus.includes(q) ||
+        clientName.includes(q);
+
+      return statusMatch && textMatch;
+    });
+  }, [tasks, drafts, search, statusFilter, clientMap, assigneeMap, clients]);
+
+  const groupedListTasks = useMemo(() => {
+    const groups = STATUS_OPTIONS.map((status) => ({
+      status,
+      label:
+        status === "completed"
+          ? "Completed"
+          : status
+              .split(" ")
+              .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+              .join(" "),
+      tasks: filteredTasks.filter((task) => {
+        const draft = drafts[getTaskId(task)] || makeDraft(task);
+        return normalizeStatus(draft.status) === normalizeStatus(status);
+      }),
+    })).filter((group) => group.tasks.length > 0);
+
+    return groups;
+  }, [filteredTasks, drafts]);
+
+  const boardGroups = useMemo(() => {
+    return BOARD_COLUMNS.map((column) => ({
+      ...column,
+      tasks: filteredTasks.filter((task) => {
+        const draft = drafts[getTaskId(task)] || makeDraft(task);
+        return matchesBoardColumn(normalizeStatus(draft.status), column.key);
+      }),
+    }));
+  }, [filteredTasks, drafts]);
+
+  const stats = useMemo(() => {
+    const total = filteredTasks.length;
+    const openCount = filteredTasks.filter((task: any) => {
+      const draft = drafts[getTaskId(task)] || makeDraft(task);
+      const s = normalizeStatus(draft.status);
+      return !["completed", "closed", "complete"].includes(s);
+    }).length;
+
+    const completed = filteredTasks.filter((task: any) => {
+      const draft = drafts[getTaskId(task)] || makeDraft(task);
+      const s = normalizeStatus(draft.status);
+      return ["completed", "closed", "complete"].includes(s);
+    }).length;
+
+    return { total, openCount, completed };
+  }, [filteredTasks, drafts]);
+
+  function getDraft(task: any) {
+    const id = getTaskId(task);
+    return drafts[id] || makeDraft(task);
+  }
+
+  function patchDraft(taskId: string, patch: Partial<TaskDraft>) {
+    setDrafts((prev) => ({
+      ...prev,
+      [taskId]: {
+        ...(prev[taskId] || {
+          title: "",
+          description: "",
+          status: "not started",
+          assignee: "",
+          assignees: [],
+          dueDate: "",
+        }),
+        ...patch,
+      },
+    }));
+  }
+
+  async function refreshTasks() {
+    await qc.invalidateQueries({
+      queryKey: ["tasks", clientId || ALL_CLIENTS_VALUE],
+    });
+    await qc.invalidateQueries({ queryKey: ["tasks"] });
+  }
+
+  async function handleDeleteTask(task: any) {
+    const id = getTaskId(task);
+    if (!id || busyTaskId) return;
+
+    const yes = window.confirm(
+      `Delete "${getTaskTitle(task)}"? This will remove it from NLM OS and ClickUp if synced.`,
+    );
+    if (!yes) return;
+
+    setBusyTaskId(id);
+    try {
+      await deleteTask(id);
+      showToast("success", "Task deleted successfully.");
+      await refreshTasks();
+      if (selectedTask && getTaskId(selectedTask) === id) {
+        setSelectedTask(null);
+      }
+    } catch (e: any) {
+      showToast("error", e?.message || "Failed to delete task.", true);
+    } finally {
+      setBusyTaskId("");
+    }
+  }
+
+  async function autoSaveTask(task: any, patch: Partial<TaskDraft>) {
+    const id = getTaskId(task);
+    if (!id || busyTaskId) return;
+
+    const previous = getDraft(task);
+    const next = {
+      ...previous,
+      ...patch,
+    };
+
+    patchDraft(id, patch);
+    setBusyTaskId(id);
+
+    try {
+      const assigneeNames = next.assignees
+        .map((assigneeId) => assigneeMap.get(String(assigneeId)))
+        .filter(Boolean)
+        .map((item) => getAssigneeLabel(item as ClickUpAssignee))
+        .join(", ");
+
+      const response = await updateTaskDetails(id, {
+        status: next.status,
+        assignee: assigneeNames,
+        assigneeIds: next.assignees,
+        dueDate: next.dueDate || null,
+      });
+
+      const updatedTask = (response as any)?.task || null;
+      if (updatedTask && selectedTask && getTaskId(selectedTask) === id) {
+        setSelectedTask(updatedTask);
+      }
+
+      showToast("success", "Task updated.");
+      await refreshTasks();
+    } catch (e: any) {
+      patchDraft(id, previous);
+      showToast("error", e?.message || "Failed to update task.", true);
+    } finally {
+      setBusyTaskId("");
+    }
+  }
+
+  function handleClose() {
+    if (isAddDrawerOpen) return;
+    onClose();
+  }
+
+  function handleOpenAddTask() {
+    setIsAddDrawerOpen(true);
+  }
+
+  function clientLabelForTask(task: any) {
+    const resolved = resolveClientFromTask(task, clients);
+    if (resolved?.name) return resolved.name;
+
+    const id = getTaskClientId(task);
+    if (!id) return "—";
+    return clientMap.get(id)?.name || id;
+  }
+
+  function renderAssigneeChips(task: any, draft: TaskDraft) {
+    const selected = draft.assignees
+      .map((assigneeId) => assigneeMap.get(String(assigneeId)))
+      .filter(Boolean) as ClickUpAssignee[];
+
+    return (
+      <div
+        className="nlmAssigneeMenuWrap"
+        ref={assigneeMenuTaskId === getTaskId(task) ? assigneeMenuRef : null}
+      >
+        <div className="nlmAssigneeChipsOnly">
+          {selected.length ? (
+            selected.map((item) => {
+              const label = getAssigneeLabel(item);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="nlmAssigneeChip nlmAssigneeChipOnly"
+                  title={label}
+                  onClick={() =>
+                    setAssigneeMenuTaskId((prev) =>
+                      prev === getTaskId(task) ? "" : getTaskId(task),
+                    )
+                  }
+                >
+                  <span className="nlmAssigneeChipAvatar">
+                    {getAssigneeInitials(label)}
+                  </span>
+                </button>
+              );
+            })
+          ) : (
+            <button
+              type="button"
+              className="nlmAssigneeAddBtn nlmAssigneeAddBtnGhost"
+              onClick={() => setAssigneeMenuTaskId(getTaskId(task))}
+              title="Assign members"
+            >
+              +
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="nlmAssigneeAddBtn"
+            onClick={() =>
+              setAssigneeMenuTaskId((prev) =>
+                prev === getTaskId(task) ? "" : getTaskId(task),
+              )
+            }
+            title="Assign members"
+          >
+            +
+          </button>
+        </div>
+
+        {assigneeMenuTaskId === getTaskId(task) ? (
+          <div className="nlmAssigneePopover nlmAssigneePopoverAbsolute">
+            <div className="nlmAssigneePopoverTitle">Assign members</div>
+            <div className="nlmAssigneePopoverList">
+              {assignees.map((item) => {
+                const label = getAssigneeLabel(item);
+                const checked = draft.assignees.includes(String(item.id));
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`nlmAssigneePopoverItem ${checked ? "active" : ""}`}
+                    onClick={() => {
+                      const nextAssignees = checked
+                        ? draft.assignees.filter(
+                            (value) => value !== String(item.id),
+                          )
+                        : [...draft.assignees, String(item.id)];
+
+                      autoSaveTask(task, {
+                        assignees: nextAssignees,
+                        assignee: nextAssignees
+                          .map((value) => assigneeMap.get(String(value)))
+                          .filter(Boolean)
+                          .map((value) =>
+                            getAssigneeLabel(value as ClickUpAssignee),
+                          )
+                          .join(", "),
+                      });
+                    }}
+                  >
+                    <span className="nlmAssigneePopoverAvatar">
+                      {getAssigneeInitials(label)}
+                    </span>
+                    <span className="nlmAssigneePopoverLabel">{label}</span>
+                    <span className="nlmAssigneePopoverCheck">
+                      {checked ? "✓" : ""}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  function renderTaskTable(tasksForStatus: any[], statusLabel: string) {
+    return (
+      <div className="nlmTaskSection" key={statusLabel}>
+        <div className="nlmTaskSectionHeader">
+          <span
+            className={`nlmTaskSectionBadge nlmTaskSectionBadge--${normalizeStatus(statusLabel).replace(/\s+/g, "-")}`}
+          >
+            {statusLabel.toUpperCase()}
+          </span>
+          <strong>{tasksForStatus.length}</strong>
+        </div>
+
+        <div className="nlmTaskTableWrap">
+          <table className="nlmTaskTable nlmTaskTableFixed">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Client</th>
+                <th>Assignee</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th className="nlmTaskTableActionsCol">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tasksForStatus.map((task: any) => {
+                const id = getTaskId(task);
+                const draft = getDraft(task);
+                const busy = busyTaskId === id;
+
+                return (
+                  <tr key={id || `${statusLabel}-${getTaskTitle(task)}`}>
+                    <td className="nlmTaskNameCell">
+                      <button
+                        type="button"
+                        className="nlmTaskNameButton"
+                        onClick={() => setSelectedTask(task)}
+                        title="Open task details"
+                      >
+                        {draft.title}
+                      </button>
+                    </td>
+
+                    <td>{clientLabelForTask(task)}</td>
+
+                    <td className="nlmAssigneeCell">
+                      {renderAssigneeChips(task, draft)}
+                    </td>
+
+                    <td>
+                      <input
+                        type="date"
+                        className={`nlmInlineInput nlmDateInput ${isOverdue(task, draft) ? "nlmDateInputOverdue" : ""}`}
+                        value={draft.dueDate}
+                        onChange={(e) =>
+                          autoSaveTask(task, { dueDate: e.target.value })
+                        }
+                      />
+                    </td>
+
+                    <td>
+                      <select
+                        className="nlmInlineSelect"
+                        value={draft.status}
+                        onChange={(e) =>
+                          autoSaveTask(task, { status: e.target.value })
+                        }
+                      >
+                        {STATUS_OPTIONS.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+                    <td className="nlmTaskTableActions">
+                      <button
+                        type="button"
+                        className="nlmMiniActionBtn nlmMiniActionBtnDanger"
+                        onClick={() => handleDeleteTask(task)}
+                        disabled={busy}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  function renderBoardView() {
+    return (
+      <div className="nlmBoardGrid">
+        {boardGroups.map((column) => (
+          <div className="nlmBoardColumn" key={column.key}>
+            <div className="nlmBoardColumnHeader">
+              <span
+                className={`nlmTaskSectionBadge nlmTaskSectionBadge--${column.key.replace(/\s+/g, "-")}`}
+              >
+                {column.label}
+              </span>
+              <strong>{column.tasks.length}</strong>
+            </div>
+
+            <div className="nlmBoardColumnBody">
+              {!column.tasks.length ? (
+                <div className="nlmBoardEmpty">No tasks</div>
+              ) : (
+                column.tasks.map((task: any) => {
+                  const id = getTaskId(task);
+                  const draft = getDraft(task);
+                  const busy = busyTaskId === id;
+
+                  return (
+                    <div
+                      key={id || getTaskTitle(task)}
+                      className="nlmBoardCard"
+                    >
+                      <button
+                        type="button"
+                        className="nlmBoardTitleButton"
+                        onClick={() => setSelectedTask(task)}
+                      >
+                        {draft.title}
+                      </button>
+
+                      <div className="nlmBoardMeta">
+                        <span>{clientLabelForTask(task)}</span>
+                        <span
+                          className={
+                            isOverdue(task, draft)
+                              ? "nlmDueDateOverdueText"
+                              : ""
+                          }
+                        >
+                          Due: {draft.dueDate ? formatDate(draft.dueDate) : "—"}
+                        </span>
+                      </div>
+
+                      <div className="nlmBoardAssigneeRow">
+                        {renderAssigneeChips(task, draft)}
+                      </div>
+
+                      <input
+                        type="date"
+                        className={`nlmInlineInput nlmDateInput ${isOverdue(task, draft) ? "nlmDateInputOverdue" : ""}`}
+                        value={draft.dueDate}
+                        onChange={(e) =>
+                          autoSaveTask(task, { dueDate: e.target.value })
+                        }
+                      />
+
+                      <select
+                        className="nlmInlineSelect"
+                        value={draft.status}
+                        onChange={(e) =>
+                          autoSaveTask(task, { status: e.target.value })
+                        }
+                      >
+                        {STATUS_OPTIONS.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+
+                      <div className="nlmBoardCardActions">
+                        <button
+                          type="button"
+                          className="nlmMiniActionBtn nlmMiniActionBtnDanger"
+                          onClick={() => handleDeleteTask(task)}
+                          disabled={busy}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!open) return null;
+
+  return (
+    <>
+      <Toast
+        open={toast.open}
+        type={toast.type}
+        message={toast.message}
+        onClose={() => setToast(EMPTY_TOAST)}
+      />
+
+      <div className="nlmFullDrawerOverlay" onClick={handleClose}>
+        <div
+          className="nlmFullDrawerSheet nlmClickUpWorkspaceSheet"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <aside className="nlmClickUpMiniNav">
+            <div className="nlmClickUpMiniNavTop">
+              <div className="nlmClickUpMiniNavTitle">Workspace</div>
+              <div className="nlmClickUpMiniNavSub">ClickUp</div>
+            </div>
+
+            <div className="nlmClickUpMiniNavSection">Clients</div>
+
+            <div className="nlmClickUpClientSearch">
+              <input
+                placeholder="Search client..."
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+              />
+            </div>
+
+            <button
+              type="button"
+              className={`nlmClickUpMiniNavItem ${clientId === ALL_CLIENTS_VALUE ? "active" : ""}`}
+              onClick={() => setClientId(ALL_CLIENTS_VALUE)}
+            >
+              All Clients
+            </button>
+
+            <div className="nlmClickUpMiniNavList">
+              {filteredClients.map((client) => (
+                <button
+                  type="button"
+                  key={client.id}
+                  className={`nlmClickUpMiniNavItem ${String(clientId) === String(client.id) ? "active" : ""}`}
+                  onClick={() => setClientId(String(client.id))}
+                >
+                  {client.name}
+                </button>
+              ))}
+            </div>
+          </aside>
+
+          <section className="nlmClickUpWorkspaceMain">
+            <div className="nlmFullDrawerHeader">
+              <div className="nlmFullDrawerHeaderLeft">
+                <div className="nlmFullDrawerEyebrow">Workspace</div>
+                <div className="nlmFullDrawerTitle">ClickUp Tasks</div>
+                <div className="nlmFullDrawerSub">
+                  {clientId === ALL_CLIENTS_VALUE
+                    ? "Viewing tasks across all clients."
+                    : `Viewing tasks for ${selectedClient?.name || "selected client"}.`}
+                </div>
+              </div>
+
+              <div className="nlmFullDrawerHeaderActions">
+                <button
+                  type="button"
+                  className="nlmFullDrawerSecondaryBtn"
+                  onClick={handleClose}
+                >
+                  Close
+                </button>
+
+                <button
+                  type="button"
+                  className="nlmFullDrawerPrimaryBtn"
+                  onClick={handleOpenAddTask}
+                >
+                  + Add Task
+                </button>
+              </div>
+            </div>
+
+            <div className="nlmClickUpWorkspaceTopbar">
+              <div className="nlmClickUpViewToggle">
+                <button
+                  type="button"
+                  className={viewMode === "list" ? "active" : ""}
+                  onClick={() => setViewMode("list")}
+                >
+                  List
+                </button>
+                <button
+                  type="button"
+                  className={viewMode === "board" ? "active" : ""}
+                  onClick={() => setViewMode("board")}
+                >
+                  Board
+                </button>
+              </div>
+
+              <div className="nlmFullDrawerToolbar nlmClickUpToolbar">
+                <div className="nlmFullDrawerField">
+                  <label>Client</label>
+                  <select
+                    value={clientId}
+                    onChange={(e) => setClientId(e.target.value)}
+                  >
+                    <option value={ALL_CLIENTS_VALUE}>All Clients</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="nlmFullDrawerField">
+                  <label>Status</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="all">All statuses</option>
+                    {STATUS_OPTIONS.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="nlmFullDrawerField">
+                  <label>Search</label>
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search title, assignee, details..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="nlmFullDrawerStats">
+              <div className="nlmFullDrawerStatCard">
+                <span>Total Tasks</span>
+                <strong>{stats.total}</strong>
+              </div>
+              <div className="nlmFullDrawerStatCard">
+                <span>Open</span>
+                <strong>{stats.openCount}</strong>
+              </div>
+              <div className="nlmFullDrawerStatCard">
+                <span>Completed</span>
+                <strong>{stats.completed}</strong>
+              </div>
+              <div className="nlmFullDrawerStatCard">
+                <span>Client</span>
+                <strong>
+                  {clientId === ALL_CLIENTS_VALUE
+                    ? "All Clients"
+                    : selectedClient?.name || "—"}
+                </strong>
+              </div>
+            </div>
+
+            <div className="nlmFullDrawerBody">
+              {tasksQ.isLoading ? (
+                <div className="nlmFullDrawerEmptyState">
+                  <div className="nlmFullDrawerEmptyTitle">Loading tasks…</div>
+                </div>
+              ) : tasksQ.isError ? (
+                <div className="nlmFullDrawerEmptyState">
+                  <div className="nlmFullDrawerEmptyTitle">
+                    Failed to load tasks
+                  </div>
+                  <div className="nlmFullDrawerEmptySub">
+                    Please check the task connection and try again.
+                  </div>
+                </div>
+              ) : !filteredTasks.length ? (
+                <div className="nlmFullDrawerEmptyState">
+                  <div className="nlmFullDrawerEmptyTitle">No tasks found</div>
+                  <div className="nlmFullDrawerEmptySub">
+                    Try another filter or create a new task.
+                  </div>
+                </div>
+              ) : viewMode === "list" ? (
+                <div className="nlmTaskSections">
+                  {groupedListTasks.map((group) =>
+                    renderTaskTable(group.tasks, group.label),
+                  )}
+                </div>
+              ) : (
+                renderBoardView()
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <AddTaskDrawer
+        open={isAddDrawerOpen}
+        onClose={async () => {
+          setIsAddDrawerOpen(false);
+          await refreshTasks();
+        }}
+        initialClientId={
+          clientId && clientId !== ALL_CLIENTS_VALUE ? clientId : ""
+        }
+      />
+
+      <TaskDetailsDrawer
+        open={!!selectedTask}
+        task={selectedTask}
+        clientName={selectedTask ? clientLabelForTask(selectedTask) : ""}
+        clients={clients}
+        assignees={assignees}
+        onClose={() => setSelectedTask(null)}
+        onSaved={async (updatedTask) => {
+          if (updatedTask) {
+            setSelectedTask(updatedTask);
+          }
+          await refreshTasks();
+        }}
+      />
+    </>
+  );
+}

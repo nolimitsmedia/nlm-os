@@ -1,0 +1,316 @@
+/* src/pages/Dashboard.css */
+
+.dash {
+  width: 100%;
+}
+
+.dashHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.dashKicker {
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  color: rgba(17, 24, 39, 0.55);
+  font-size: 12px;
+}
+
+.dashTitle {
+  margin: 4px 0 0 0;
+  font-size: 28px;
+  letter-spacing: -0.4px;
+  color: #6f95de;
+}
+
+.dashSub {
+  margin-top: 6px;
+  color: rgba(17, 24, 39, 0.55);
+  font-size: 13px;
+}
+
+.dashActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dashBtnPrimary,
+.dashBtnGhost {
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 900;
+  border: 1px solid rgba(11, 92, 255, 0.22);
+}
+
+.dashBtnPrimary {
+  background: rgba(11, 92, 255, 0.12);
+}
+
+.dashBtnGhost {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(17, 24, 39, 0.1);
+}
+
+.dashGridCards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 1100px) {
+  .dashGridCards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .dashGridCards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashCard {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  padding: 14px;
+  box-shadow: 0 12px 34px rgba(17, 24, 39, 0.06);
+}
+
+.dashCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dashCardLabel {
+  font-weight: 900;
+  color: rgba(17, 24, 39, 0.65) !important;
+  font-size: 12px;
+}
+
+.dashChip {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(11, 92, 255, 0.18);
+  background: rgba(11, 92, 255, 0.1);
+}
+
+.dashCardValue {
+  font-size: 28px;
+  font-weight: 1000;
+  letter-spacing: -0.5px;
+  margin-top: 10px;
+  color: rgba(17, 24, 39, 0.65);
+}
+
+.dashCardSub {
+  margin-top: 6px;
+  color: rgba(17, 24, 39, 0.55);
+  font-size: 13px;
+}
+
+.dashGridMain {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+@media (max-width: 1000px) {
+  .dashGridMain {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashPanel {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  padding: 14px;
+  box-shadow: 0 12px 34px rgba(17, 24, 39, 0.06);
+}
+
+.dashPanelHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.dashPanelTitle {
+  font-weight: 1000;
+  letter-spacing: -0.2px;
+  color: rgba(17, 24, 39, 0.65);
+}
+
+.dashPanelSub {
+  margin-top: 4px;
+  color: rgba(17, 24, 39, 0.55);
+  font-size: 13px;
+}
+
+.dashPanelRight {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.dashLegend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(17, 24, 39, 0.6);
+  font-weight: 900;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 99px;
+  display: inline-block;
+}
+.dot.blue {
+  background: rgba(11, 92, 255, 0.65);
+}
+.dot.gold {
+  background: rgba(253, 157, 0, 0.75);
+}
+
+.dashBars {
+  height: 210px;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 8px;
+  align-items: end;
+  padding: 8px;
+  border-radius: 16px;
+  background: rgba(246, 247, 251, 0.9);
+  border: 1px solid rgba(17, 24, 39, 0.06);
+}
+
+.dashBarWrap {
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 5px;
+}
+
+.dashBar {
+  width: 10px;
+  border-radius: 10px;
+}
+
+.dashBar.blue {
+  background: rgba(11, 92, 255, 0.55);
+}
+.dashBar.gold {
+  background: rgba(253, 157, 0, 0.7);
+}
+
+.dashPanelFoot {
+  margin-top: 10px;
+}
+
+.dashHint {
+  font-size: 12px;
+  color: rgba(17, 24, 39, 0.55);
+}
+
+.dashQuick {
+  display: grid;
+  gap: 10px;
+}
+
+.dashQuickItem {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  background: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+}
+
+.dashQuickItem:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(17, 24, 39, 0.08);
+}
+
+.dashQuickIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: rgba(11, 92, 255, 0.1);
+  border: 1px solid rgba(11, 92, 255, 0.14);
+  font-size: 18px;
+}
+
+.dashQuickTitle {
+  font-weight: 1000;
+}
+
+.dashQuickSub {
+  margin-top: 2px;
+  color: rgba(17, 24, 39, 0.55);
+  font-size: 13px;
+}
+
+.dashDivider {
+  height: 1px;
+  background: rgba(17, 24, 39, 0.08);
+  margin: 12px 0;
+}
+
+.dashListTitle {
+  font-weight: 1000;
+  margin-bottom: 10px;
+  color: rgba(17, 24, 39, 0.65);
+}
+
+.dashList {
+  display: grid;
+  gap: 10px;
+}
+
+.dashListItem {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.dashBullet {
+  width: 10px;
+  height: 10px;
+  margin-top: 6px;
+  border-radius: 99px;
+  background: rgba(11, 92, 255, 0.45);
+}
+
+.dashListMain {
+  font-size: 13px;
+  color: #6f95de;
+}
+
+.dashListSub {
+  margin-top: 3px;
+  color: rgba(17, 24, 39, 0.55);
+  font-size: 12px;
+}

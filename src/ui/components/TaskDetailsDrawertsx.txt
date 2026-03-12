@@ -1,0 +1,539 @@
+// src/ui/components/TaskDetailsDrawer.tsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  updateTaskDetails,
+  type ClickUpAssignee,
+  type Client,
+} from "../../api";
+import "./TaskDetailsDrawer.css";
+
+type Props = {
+  open: boolean;
+  task: any | null;
+  clientName?: string;
+  clients?: Client[];
+  assignees: ClickUpAssignee[];
+  onClose: () => void;
+  onSaved?: (task?: any) => Promise<void> | void;
+};
+
+type Draft = {
+  title: string;
+  description: string;
+  status: string;
+  dueDate: string;
+  clientId: string;
+  assignees: string[];
+};
+
+const STATUS_OPTIONS = [
+  "not started",
+  "open",
+  "to do",
+  "in progress",
+  "on hold",
+  "review",
+  "complete",
+  "completed",
+  "closed",
+];
+
+function normalizeStatus(value: any) {
+  const v = String(value?.status || value || "not started")
+    .trim()
+    .toLowerCase();
+
+  if (v === "complete" || v === "closed") return "completed";
+  if (v === "to-do") return "to do";
+  return v || "not started";
+}
+
+function parseDateValue(value: any) {
+  if (value === null || value === undefined || value === "") return null;
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value === "number") {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  if (/^\d{10,13}$/.test(raw)) {
+    const n = Number(raw);
+    const date = new Date(raw.length === 10 ? n * 1000 : n);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getTaskId(task: any) {
+  return String(task?.id || task?.task_id || task?.clickup_task_id || "");
+}
+
+function getTaskTitle(task: any) {
+  return (
+    task?.title ||
+    task?.name ||
+    task?.task_name ||
+    task?.subject ||
+    "Untitled Task"
+  );
+}
+
+function getTaskDescription(task: any) {
+  return (
+    task?.description || task?.details || task?.body || task?.content || ""
+  );
+}
+
+function getTaskDueDate(task: any) {
+  return task?.due_date || task?.dueDate || task?.date_due || null;
+}
+
+function getTaskClientId(task: any) {
+  return String(task?.client_id || task?.clientId || "").trim();
+}
+
+function normalizeClientKey(value: any) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
+function resolveClientIdFromTask(task: any, clients: Client[] = []) {
+  const raw = getTaskClientId(task);
+  if (!raw) return "";
+
+  const direct = clients.find((item) => String(item.id).trim() === raw);
+  if (direct) return String(direct.id);
+
+  const needle = normalizeClientKey(raw);
+  const byName = clients.find(
+    (item) => normalizeClientKey(item.name) === needle,
+  );
+  if (byName) return String(byName.id);
+
+  return raw;
+}
+
+function getTaskAssigneeIds(task: any): string[] {
+  const direct = Array.isArray(task?.assignee_ids)
+    ? task.assignee_ids
+    : Array.isArray(task?.assigneeIds)
+      ? task.assigneeIds
+      : [];
+
+  if (direct.length) {
+    return direct.map((v: any) => String(v || "").trim()).filter(Boolean);
+  }
+
+  if (Array.isArray(task?.assignees)) {
+    return task.assignees
+      .map((item: any) =>
+        String(item?.id || item?.user_id || item?.userid || "").trim(),
+      )
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+function getAssigneeLabel(item: ClickUpAssignee | undefined | null) {
+  if (!item) return "Unassigned";
+  return (
+    item.displayName || item.name || item.username || item.email || "Unassigned"
+  );
+}
+
+function initials(name: string) {
+  const parts = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!parts.length) return "NA";
+  return parts
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase();
+}
+
+function toInputDate(value: any) {
+  const date = parseDateValue(value);
+  if (!date) return "";
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatDate(value: any) {
+  const date = parseDateValue(value);
+  if (!date) return "—";
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function makeDraft(task: any, clients: Client[] = []): Draft {
+  return {
+    title: getTaskTitle(task),
+    description: getTaskDescription(task),
+    status: normalizeStatus(task?.status),
+    dueDate: toInputDate(getTaskDueDate(task)),
+    clientId: resolveClientIdFromTask(task, clients),
+    assignees: getTaskAssigneeIds(task),
+  };
+}
+
+export default function TaskDetailsDrawer({
+  open,
+  task,
+  clientName,
+  clients = [],
+  assignees,
+  onClose,
+  onSaved,
+}: Props) {
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const [draft, setDraft] = useState<Draft>({
+    title: "",
+    description: "",
+    status: "not started",
+    dueDate: "",
+    clientId: "",
+    assignees: [],
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [assigneeSearch, setAssigneeSearch] = useState("");
+  const [assigneePickerOpen, setAssigneePickerOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open || !task) return;
+    setDraft(makeDraft(task, clients));
+    setError("");
+    setSuccess("");
+    setAssigneeSearch("");
+    setAssigneePickerOpen(false);
+  }, [open, task, clients]);
+
+  useEffect(() => {
+    function handleOutside(event: MouseEvent) {
+      if (
+        assigneePickerOpen &&
+        popoverRef.current &&
+        !popoverRef.current.contains(event.target as Node)
+      ) {
+        setAssigneePickerOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [assigneePickerOpen]);
+
+  const taskId = useMemo(() => getTaskId(task), [task]);
+
+  const selectedAssignees = useMemo(
+    () =>
+      draft.assignees
+        .map((id) => assignees.find((item) => String(item.id) === String(id)))
+        .filter(Boolean) as ClickUpAssignee[],
+    [assignees, draft.assignees],
+  );
+
+  const filteredAssignees = useMemo(() => {
+    const q = assigneeSearch.trim().toLowerCase();
+    if (!q) return assignees;
+    return assignees.filter((item) =>
+      getAssigneeLabel(item).toLowerCase().includes(q),
+    );
+  }, [assigneeSearch, assignees]);
+
+  const selectedClientName = useMemo(() => {
+    const rawTaskClientId = getTaskClientId(task);
+    const found = clients.find((item) => {
+      const itemId = String(item.id).trim();
+      const itemName = normalizeClientKey(item.name);
+      return (
+        itemId === String(draft.clientId).trim() ||
+        itemId === String(rawTaskClientId).trim() ||
+        itemName === normalizeClientKey(draft.clientId) ||
+        itemName === normalizeClientKey(rawTaskClientId)
+      );
+    });
+    return found?.name || clientName || rawTaskClientId || "Unknown client";
+  }, [clients, draft.clientId, clientName, task]);
+
+  function toggleAssignee(id: string) {
+    setDraft((prev) => ({
+      ...prev,
+      assignees: prev.assignees.includes(id)
+        ? prev.assignees.filter((item) => item !== id)
+        : [...prev.assignees, id],
+    }));
+  }
+
+  function removeAssignee(id: string) {
+    setDraft((prev) => ({
+      ...prev,
+      assignees: prev.assignees.filter((item) => item !== id),
+    }));
+  }
+
+  async function handleSave() {
+    if (!taskId) return;
+    setSaving(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const assigneeNames = draft.assignees
+        .map((id) => assignees.find((item) => String(item.id) === String(id)))
+        .filter(Boolean)
+        .map((item) => getAssigneeLabel(item as ClickUpAssignee))
+        .join(", ");
+
+      const response = await updateTaskDetails(taskId, {
+        title: draft.title.trim(),
+        description: draft.description,
+        status: draft.status,
+        assignee: assigneeNames,
+        assigneeIds: draft.assignees,
+        dueDate: draft.dueDate || null,
+        clientId: draft.clientId || null,
+      });
+
+      setSuccess("Task details updated.");
+      await onSaved?.((response as any)?.task || null);
+    } catch (e: any) {
+      setError(e?.message || "Failed to save task details.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!open || !task) return null;
+
+  return (
+    <div className="nlmTaskDetailsOverlay" onClick={onClose}>
+      <div
+        className="nlmTaskDetailsDrawer"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="nlmTaskDetailsHeader">
+          <div>
+            <div className="nlmTaskDetailsEyebrow">Task Details</div>
+            <div className="nlmTaskDetailsTitle">{getTaskTitle(task)}</div>
+            <div className="nlmTaskDetailsSub">
+              {selectedClientName} • Due {formatDate(getTaskDueDate(task))}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="nlmTaskDetailsClose"
+            onClick={onClose}
+            aria-label="Close task details"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="nlmTaskDetailsBody">
+          <div className="nlmTaskDetailsGrid">
+            <label className="nlmTaskDetailsField nlmTaskDetailsFieldFull">
+              <span>Task Name</span>
+              <input
+                value={draft.title}
+                onChange={(e) =>
+                  setDraft((prev) => ({ ...prev, title: e.target.value }))
+                }
+                placeholder="Task title"
+              />
+            </label>
+
+            <label className="nlmTaskDetailsField nlmTaskDetailsFieldFull">
+              <span>Description</span>
+              <textarea
+                value={draft.description}
+                onChange={(e) =>
+                  setDraft((prev) => ({ ...prev, description: e.target.value }))
+                }
+                placeholder="Add task details"
+                rows={8}
+              />
+            </label>
+
+            <label className="nlmTaskDetailsField">
+              <span>Client</span>
+              <select
+                value={draft.clientId}
+                onChange={(e) =>
+                  setDraft((prev) => ({ ...prev, clientId: e.target.value }))
+                }
+              >
+                <option value="">Select client</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="nlmTaskDetailsField">
+              <span>Status</span>
+              <select
+                value={draft.status}
+                onChange={(e) =>
+                  setDraft((prev) => ({ ...prev, status: e.target.value }))
+                }
+              >
+                {STATUS_OPTIONS.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="nlmTaskDetailsField">
+              <span>Due Date</span>
+              <input
+                type="date"
+                value={draft.dueDate}
+                onChange={(e) =>
+                  setDraft((prev) => ({ ...prev, dueDate: e.target.value }))
+                }
+              />
+            </label>
+
+            <div
+              className="nlmTaskDetailsField nlmTaskDetailsFieldFull nlmTaskDetailsAssigneeField"
+              ref={popoverRef}
+            >
+              <span>Assignees</span>
+
+              <div className="nlmTaskDetailsSelectedAssignees">
+                {selectedAssignees.length ? (
+                  selectedAssignees.map((item) => {
+                    const label = getAssigneeLabel(item);
+                    return (
+                      <div key={item.id} className="nlmTaskDetailsChip">
+                        <span className="nlmTaskDetailsChipAvatar">
+                          {initials(label)}
+                        </span>
+                        <span>{label}</span>
+                        <button
+                          type="button"
+                          className="nlmTaskDetailsChipRemove"
+                          onClick={() => removeAssignee(String(item.id))}
+                          aria-label={`Remove ${label}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="nlmTaskDetailsMuted">
+                    No assignees selected.
+                  </div>
+                )}
+              </div>
+
+              <div className="nlmTaskDetailsPickerBar">
+                <button
+                  type="button"
+                  className="nlmTaskDetailsPickerToggle"
+                  onClick={() => setAssigneePickerOpen((prev) => !prev)}
+                >
+                  + Assign members
+                </button>
+              </div>
+
+              {assigneePickerOpen ? (
+                <div className="nlmTaskDetailsAssigneePopover">
+                  <input
+                    className="nlmTaskDetailsAssigneeSearch"
+                    value={assigneeSearch}
+                    onChange={(e) => setAssigneeSearch(e.target.value)}
+                    placeholder="Search members..."
+                  />
+
+                  <div className="nlmTaskDetailsAssigneeMenu">
+                    {filteredAssignees.map((item) => {
+                      const label = getAssigneeLabel(item);
+                      const checked = draft.assignees.includes(String(item.id));
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={`nlmTaskDetailsAssigneeMenuItem ${checked ? "active" : ""}`}
+                          onClick={() => toggleAssignee(String(item.id))}
+                        >
+                          <span className="nlmTaskDetailsChipAvatar">
+                            {initials(label)}
+                          </span>
+                          <span className="nlmTaskDetailsAssigneeMenuLabel">
+                            {label}
+                          </span>
+                          <span className="nlmTaskDetailsAssigneeMenuCheck">
+                            {checked ? "✓" : ""}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {error ? (
+            <div className="nlmTaskDetailsAlert nlmTaskDetailsAlertError">
+              {error}
+            </div>
+          ) : null}
+          {success ? (
+            <div className="nlmTaskDetailsAlert nlmTaskDetailsAlertSuccess">
+              {success}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="nlmTaskDetailsFooter">
+          <button
+            type="button"
+            className="nlmTaskDetailsBtn nlmTaskDetailsBtnSecondary"
+            onClick={onClose}
+            disabled={saving}
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            className="nlmTaskDetailsBtn nlmTaskDetailsBtnPrimary"
+            onClick={handleSave}
+            disabled={saving || !draft.title.trim()}
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

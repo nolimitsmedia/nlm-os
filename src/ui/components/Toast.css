@@ -1,0 +1,56 @@
+/* apps/web/src/ui/components/Toast.css */
+.nlmToast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  min-width: 280px;
+  max-width: 420px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #ffffff;
+}
+
+.nlmToast--success {
+  border-left: 5px solid #0b6b2f;
+}
+
+.nlmToast--error {
+  border-left: 5px solid #b42318;
+}
+
+.nlmToast--info {
+  border-left: 5px solid #012c56;
+}
+
+.nlmToast__content {
+  display: grid;
+  gap: 4px;
+}
+
+.nlmToast__title {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.nlmToast__message {
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(15, 23, 42, 0.78);
+}
+
+.nlmToast__close {
+  border: 0;
+  background: transparent;
+  color: rgba(15, 23, 42, 0.6);
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+  padding: 0;
+}

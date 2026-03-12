@@ -1,0 +1,88 @@
+import React from "react";
+import "./CopilotPanel.css";
+
+type Props = {
+  clientName?: string;
+  clientStatus?: string;
+};
+
+export default function CopilotPanel({ clientName, clientStatus }: Props) {
+  const [min, setMin] = React.useState(false);
+
+  return (
+    <aside className={`copilot ${min ? "isMin" : ""}`}>
+      <div className="copilotHeader">
+        <button
+          className="copilotBadge"
+          onClick={() => setMin(false)}
+          title="Open Copilot"
+          aria-label="Open Copilot"
+        >
+          <span className="copilotBadgeIcon">AI</span>
+        </button>
+
+        {!min && (
+          <>
+            <div className="copilotHeaderText">
+              <div className="copilotTitle">Copilot</div>
+              <div className="copilotSub">
+                {clientName ? clientName : "Client"}{" "}
+                {clientStatus ? `• ${clientStatus}` : ""}
+              </div>
+            </div>
+
+            <button
+              className="copilotMinBtn"
+              onClick={() => setMin(true)}
+              aria-label="Minimize Copilot"
+              title="Minimize"
+            >
+              —
+            </button>
+          </>
+        )}
+
+        {min && (
+          <button
+            className="copilotMinBtn"
+            onClick={() => setMin(false)}
+            aria-label="Expand Copilot"
+            title="Expand"
+          >
+            ‹
+          </button>
+        )}
+      </div>
+
+      {!min && (
+        <div className="copilotBody">
+          <div className="copilotCard">
+            <div className="copilotIntro">
+              I’m your Client 360 Copilot.
+              <br />
+              Ask me anything about{" "}
+              <b>{clientName ? clientName : "this client"}</b> — billing, tasks,
+              risk, next steps.
+            </div>
+
+            <div className="copilotChat">
+              {/* Phase 1 placeholder — wire to chat later */}
+              <div className="copilotEmpty">Chat UI coming next.</div>
+            </div>
+
+            <div className="copilotComposer">
+              <input
+                className="copilotInput"
+                placeholder="Ask Copilot…"
+                disabled
+              />
+              <button className="copilotSend" disabled>
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </aside>
+  );
+}

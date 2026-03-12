@@ -1,0 +1,432 @@
+// src/ui/components/AddTaskDrawer.tsx
+import React, { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  createTask,
+  fetchClients,
+  fetchTaskAssignees,
+  uploadTaskAttachments,
+  type ClickUpAssignee,
+  type Client,
+} from "../../api";
+import Toast from "./Toast";
+import "./Toast.css";
+import "./AddTaskDrawer.css";
+
+type Props = {
+  open: boolean;
+  onClose: () => void | Promise<void>;
+  initialClientId?: string;
+};
+
+type ToastState = {
+  open: boolean;
+  type: "success" | "error" | "info";
+  message: string;
+};
+
+type NewTaskState = {
+  clientId: string;
+  title: string;
+  description: string;
+  assigneeId: string;
+  files: File[];
+};
+
+const EMPTY_TOAST: ToastState = {
+  open: false,
+  type: "info",
+  message: "",
+};
+
+const EMPTY_NEW_TASK: NewTaskState = {
+  clientId: "",
+  title: "",
+  description: "",
+  assigneeId: "",
+  files: [],
+};
+
+function getAssigneeLabel(item: ClickUpAssignee) {
+  return (
+    item.displayName || item.name || item.username || item.email || "Unassigned"
+  );
+}
+
+function formatBytes(value: number) {
+  if (!Number.isFinite(value) || value <= 0) return "";
+  const units = ["B", "KB", "MB", "GB"];
+  let size = value;
+  let index = 0;
+  while (size >= 1024 && index < units.length - 1) {
+    size /= 1024;
+    index += 1;
+  }
+  return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
+}
+
+export default function AddTaskDrawer({
+  open,
+  onClose,
+  initialClientId = "",
+}: Props) {
+  const qc = useQueryClient();
+
+  const [newTask, setNewTask] = useState<NewTaskState>({
+    ...EMPTY_NEW_TASK,
+    clientId: initialClientId || "",
+  });
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [taskError, setTaskError] = useState("");
+  const [toast, setToast] = useState<ToastState>(EMPTY_TOAST);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  useEffect(() => {
+    if (!open) return;
+    setTaskError("");
+    setUploadProgress(0);
+    setNewTask({
+      ...EMPTY_NEW_TASK,
+      clientId: initialClientId || "",
+    });
+  }, [open, initialClientId]);
+
+  const showToast = (
+    type: ToastState["type"],
+    message: string,
+    sticky = false,
+  ) => {
+    setToast({ open: true, type, message });
+
+    if (!sticky) {
+      window.clearTimeout((showToast as any)._timer);
+      (showToast as any)._timer = window.setTimeout(() => {
+        setToast(EMPTY_TOAST);
+      }, 3200);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout((showToast as any)._timer);
+    };
+  }, []);
+
+  const clientsQ = useQuery({
+    queryKey: ["clients", "drawer-add-task"],
+    queryFn: () => fetchClients(),
+    enabled: open,
+    staleTime: 60_000,
+  });
+
+  const assigneesQ = useQuery({
+    queryKey: ["task-assignees", newTask.clientId || "global"],
+    queryFn: () => fetchTaskAssignees(newTask.clientId || undefined),
+    enabled: open && !!newTask.clientId,
+    staleTime: 60_000,
+  });
+
+  const clients = useMemo<Client[]>(
+    () => (Array.isArray(clientsQ.data) ? clientsQ.data : []),
+    [clientsQ.data],
+  );
+
+  const assignees = useMemo<ClickUpAssignee[]>(
+    () => (Array.isArray(assigneesQ.data) ? assigneesQ.data : []),
+    [assigneesQ.data],
+  );
+
+  const selectedClientName = useMemo(() => {
+    const found = clients.find(
+      (item) => String(item.id) === String(newTask.clientId || ""),
+    );
+    return found?.name || "";
+  }, [clients, newTask.clientId]);
+
+  async function handleClose() {
+    if (isAddingTask) return;
+    setTaskError("");
+    setUploadProgress(0);
+    setNewTask({
+      ...EMPTY_NEW_TASK,
+      clientId: initialClientId || "",
+    });
+    await onClose();
+  }
+
+  function onTaskFilesSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+    setNewTask((prev) => ({ ...prev, files: [...prev.files, ...files] }));
+    event.target.value = "";
+  }
+
+  function removePendingTaskFile(index: number) {
+    setNewTask((prev) => ({
+      ...prev,
+      files: prev.files.filter((_, idx) => idx !== index),
+    }));
+  }
+
+  async function onAddTask() {
+    const clientId = String(newTask.clientId || "").trim();
+    const title = newTask.title.trim();
+
+    if (!clientId || !title || isAddingTask) return;
+
+    setIsAddingTask(true);
+    setTaskError("");
+    setUploadProgress(newTask.files.length ? 1 : 0);
+
+    try {
+      const selectedAssignee = assignees.find(
+        (item) => String(item.id) === String(newTask.assigneeId || ""),
+      );
+
+      const created = await createTask({
+        clientId,
+        title,
+        description: newTask.description.trim() || undefined,
+        assigneeId: newTask.assigneeId || undefined,
+        assignee: selectedAssignee
+          ? getAssigneeLabel(selectedAssignee)
+          : undefined,
+      });
+
+      const taskId =
+        (created as any)?.task?.id ||
+        (created as any)?.task?.clickup_task_id ||
+        (created as any)?.id;
+
+      let uploadMessageShown = false;
+
+      if (taskId && newTask.files.length) {
+        const uploadResult = await uploadTaskAttachments(
+          taskId,
+          newTask.files,
+          {
+            onProgress: setUploadProgress,
+          },
+        );
+
+        if (uploadResult?.warning) {
+          showToast("info", uploadResult.warning, true);
+          uploadMessageShown = true;
+        } else if (uploadResult?.message) {
+          showToast("success", uploadResult.message);
+          uploadMessageShown = true;
+        }
+      }
+
+      await qc.invalidateQueries({ queryKey: ["tasks", clientId] });
+      await qc.invalidateQueries({ queryKey: ["client-overview", clientId] });
+
+      setNewTask({
+        ...EMPTY_NEW_TASK,
+        clientId,
+      });
+      setUploadProgress(0);
+
+      if (!uploadMessageShown) {
+        showToast(
+          "success",
+          selectedClientName
+            ? `Task added for ${selectedClientName}.`
+            : "Task added and synced successfully.",
+        );
+      }
+
+      await onClose();
+    } catch (e: any) {
+      const message = e?.message || "Failed to create task.";
+      setTaskError(message);
+      showToast("error", message, true);
+    } finally {
+      setIsAddingTask(false);
+    }
+  }
+
+  if (!open) return null;
+
+  return (
+    <>
+      <Toast
+        open={toast.open}
+        type={toast.type}
+        message={toast.message}
+        onClose={() => setToast(EMPTY_TOAST)}
+      />
+
+      <div
+        className="nlmFullDrawerOverlay nlmAddTaskDrawerOverlay"
+        onClick={handleClose}
+      >
+        <div
+          className="nlmFullDrawerSheet nlmAddTaskDrawerSheet nlmAddTaskDrawer-ind"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="nlmFullDrawerHeader">
+            <div className="nlmFullDrawerHeaderLeft">
+              <div className="nlmFullDrawerEyebrow">ClickUp</div>
+              <div className="nlmFullDrawerTitle">Add Task</div>
+              <div className="nlmFullDrawerSub">
+                Create a task, assign it, and attach supporting files.
+              </div>
+            </div>
+
+            <div className="nlmFullDrawerHeaderActions">
+              <button
+                type="button"
+                className="nlmFullDrawerSecondaryBtn"
+                onClick={handleClose}
+                disabled={isAddingTask}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="nlmFullDrawerPrimaryBtn"
+                onClick={onAddTask}
+                disabled={
+                  isAddingTask ||
+                  !String(newTask.clientId || "").trim() ||
+                  !newTask.title.trim()
+                }
+              >
+                {isAddingTask ? "Creating…" : "Create Task"}
+              </button>
+            </div>
+          </div>
+
+          <div className="nlmAddTaskDrawerBody">
+            <div className="nlmAddTaskGrid">
+              <div className="nlmAddTaskField">
+                <label>Client</label>
+                <select
+                  value={newTask.clientId}
+                  onChange={(e) =>
+                    setNewTask((prev) => ({
+                      ...prev,
+                      clientId: e.target.value,
+                      assigneeId: "",
+                    }))
+                  }
+                >
+                  <option value="">
+                    {clientsQ.isLoading ? "Loading clients…" : "Select client"}
+                  </option>
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="nlmAddTaskField">
+                <label>Assignee</label>
+                <select
+                  value={newTask.assigneeId}
+                  onChange={(e) =>
+                    setNewTask((prev) => ({
+                      ...prev,
+                      assigneeId: e.target.value,
+                    }))
+                  }
+                  disabled={!newTask.clientId}
+                >
+                  <option value="">
+                    {!newTask.clientId
+                      ? "Select client first"
+                      : assigneesQ.isLoading
+                        ? "Loading assignees…"
+                        : "Select assignee"}
+                  </option>
+                  {assignees.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {getAssigneeLabel(item)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="nlmAddTaskField nlmAddTaskFieldFull">
+                <label>Task title</label>
+                <input
+                  value={newTask.title}
+                  onChange={(e) =>
+                    setNewTask((prev) => ({ ...prev, title: e.target.value }))
+                  }
+                  placeholder="Enter task title…"
+                />
+              </div>
+
+              <div className="nlmAddTaskField nlmAddTaskFieldFull">
+                <label>Description</label>
+                <textarea
+                  value={newTask.description}
+                  onChange={(e) =>
+                    setNewTask((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  placeholder="Add details for this task…"
+                  rows={10}
+                />
+              </div>
+
+              <div className="nlmAddTaskField nlmAddTaskFieldFull">
+                <label>Upload files</label>
+
+                <label className="nlmAddTaskUploadBox">
+                  <input type="file" multiple onChange={onTaskFilesSelected} />
+                  <span>⤴ Upload files</span>
+                  <small>Drag files here or click to browse</small>
+                </label>
+
+                {newTask.files.length ? (
+                  <div className="nlmAddTaskPendingGrid">
+                    {newTask.files.map((file, index) => (
+                      <div
+                        key={`${file.name}-${index}`}
+                        className="nlmAddTaskPendingCard"
+                      >
+                        <div className="nlmAddTaskPendingName">{file.name}</div>
+                        <div className="nlmAddTaskPendingMeta">
+                          {formatBytes(file.size)}
+                        </div>
+                        <button
+                          type="button"
+                          className="nlmAddTaskRemoveBtn"
+                          onClick={() => removePendingTaskFile(index)}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {isAddingTask && newTask.files.length ? (
+                  <div className="nlmAddTaskUploadProgress">
+                    <div
+                      className="nlmAddTaskUploadProgressBar"
+                      style={{ width: `${uploadProgress || 0}%` }}
+                    />
+                    <span>{uploadProgress || 0}% uploaded</span>
+                  </div>
+                ) : null}
+              </div>
+
+              {!!taskError && (
+                <div className="nlmAddTaskError">{taskError}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

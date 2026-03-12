@@ -1,0 +1,311 @@
+/* src/ui/components/TaskDetailsDrawer.css */
+.nlmTaskDetailsOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(2, 6, 23, 0.32);
+  backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.nlmTaskDetailsDrawer {
+  width: 90%;
+  height: 90%;
+  background: #ffffff;
+  box-shadow: -18px 0 40px rgba(2, 6, 23, 0.18);
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 20px;
+}
+
+.nlmTaskDetailsHeader,
+.nlmTaskDetailsFooter {
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.nlmTaskDetailsFooter {
+  border-bottom: 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.nlmTaskDetailsEyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.54);
+}
+
+.nlmTaskDetailsTitle {
+  margin-top: 6px;
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.nlmTaskDetailsSub {
+  margin-top: 6px;
+  color: rgba(15, 23, 42, 0.66);
+  font-size: 13px;
+}
+
+.nlmTaskDetailsClose {
+  border: 0;
+  background: #fff;
+  color: #475569;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.nlmTaskDetailsHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.nlmTaskDetailsBody {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 20px;
+}
+
+.nlmTaskDetailsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.nlmTaskDetailsField {
+  display: grid;
+  gap: 8px;
+}
+
+.nlmTaskDetailsFieldFull {
+  grid-column: 1 / -1;
+}
+
+.nlmTaskDetailsField span {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(15, 23, 42, 0.72);
+}
+
+.nlmTaskDetailsField input,
+.nlmTaskDetailsField select,
+.nlmTaskDetailsField textarea {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  color: #0f172a;
+  padding: 11px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+
+.nlmTaskDetailsField textarea {
+  resize: vertical;
+  min-height: 140px;
+}
+
+.nlmTaskDetailsSelectedAssignees,
+.nlmTaskDetailsAssigneeList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nlmTaskDetailsChip,
+.nlmTaskDetailsAssigneeOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 999px;
+  background: #f8fafc;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.nlmTaskDetailsAssigneeOption {
+  cursor: pointer;
+  background: #fff;
+}
+
+.nlmTaskDetailsChipAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.nlmTaskDetailsMuted {
+  font-size: 13px;
+  color: rgba(15, 23, 42, 0.55);
+}
+
+.nlmTaskDetailsAlert {
+  margin-top: 16px;
+  border-radius: 12px;
+  padding: 11px 13px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.nlmTaskDetailsAlertError {
+  background: rgba(220, 38, 38, 0.08);
+  color: #b91c1c;
+}
+
+.nlmTaskDetailsAlertSuccess {
+  background: rgba(22, 163, 74, 0.08);
+  color: #15803d;
+}
+
+.nlmTaskDetailsBtn {
+  min-width: 120px;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.nlmTaskDetailsBtnPrimary {
+  border: 0;
+  background: linear-gradient(135deg, #002c55, #2563eb);
+  color: #fff;
+}
+
+.nlmTaskDetailsBtnSecondary {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: #002c55;
+}
+
+@media (max-width: 760px) {
+  .nlmTaskDetailsDrawer {
+    width: 100%;
+  }
+
+  .nlmTaskDetailsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.nlmTaskDetailsAssigneeField {
+  position: relative;
+}
+
+.nlmTaskDetailsChipRemove {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.nlmTaskDetailsAssignBtn {
+  align-self: flex-start;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: #0f172a;
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nlmTaskDetailsAssigneePopover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(360px, 100%);
+  z-index: 9999;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(2, 6, 23, 0.18);
+  padding: 10px;
+}
+
+.nlmTaskDetailsAssigneeSearch {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 10px;
+  background: #fff;
+  color: #0f172a;
+  padding: 10px 12px;
+  font-size: 13px;
+  outline: none;
+  margin-bottom: 10px;
+}
+
+.nlmTaskDetailsAssigneeMenu {
+  display: grid;
+  gap: 4px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.nlmTaskDetailsAssigneeMenuItem {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 10px 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nlmTaskDetailsAssigneeMenuItem:hover,
+.nlmTaskDetailsAssigneeMenuItem.active {
+  background: #f8fafc;
+}
+
+.nlmTaskDetailsAssigneeMenuLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.nlmTaskDetailsAssigneeMenuCheck {
+  color: #16a34a;
+  font-weight: 900;
+}
+
+.nlmTaskDetailsPickerToggle {
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.nlmTaskDetailsPickerToggle:hover {
+  color: #2563eb;
+}

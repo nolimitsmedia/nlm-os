@@ -1,0 +1,545 @@
+// apps/web/src/ui/components/sharepoint/SharePointBrowser.tsx
+
+import React from "react";
+import SharePointUpload from "./SharePointUpload";
+
+type Site = {
+  id: string;
+  name: string;
+  webUrl?: string | null;
+};
+
+type Drive = {
+  id: string;
+  name: string;
+  webUrl?: string | null;
+};
+
+type Item = {
+  id: string;
+  name: string;
+  type: "file" | "folder";
+  path: string;
+  webUrl?: string | null;
+  size?: number | null;
+  lastModified?: string | null;
+  mimeType?: string | null;
+};
+
+type Props = {
+  mock?: boolean;
+};
+
+function formatBytes(size?: number | null) {
+  const n = Number(size || 0);
+  if (!n) return "—";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(n / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString();
+}
+
+function pathToParts(path: string) {
+  const clean = String(path || "")
+    .replace(/^\/+/, "")
+    .replace(/\/+$/, "");
+  if (!clean) return [];
+  return clean.split("/").filter(Boolean);
+}
+
+export default function SharePointBrowser({ mock }: Props) {
+  const [sites, setSites] = React.useState<Site[]>([]);
+  const [drives, setDrives] = React.useState<Drive[]>([]);
+  const [items, setItems] = React.useState<Item[]>([]);
+
+  const [siteId, setSiteId] = React.useState("");
+  const [driveId, setDriveId] = React.useState("");
+  const [folderPath, setFolderPath] = React.useState("");
+
+  const [busySites, setBusySites] = React.useState(false);
+  const [busyDrives, setBusyDrives] = React.useState(false);
+  const [busyItems, setBusyItems] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [newFolderName, setNewFolderName] = React.useState("");
+
+  const parts = React.useMemo(() => pathToParts(folderPath), [folderPath]);
+
+  const loadSites = React.useCallback(async () => {
+    setBusySites(true);
+    setError("");
+    try {
+      const res = await fetch("/sharepoint/sites", {
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Failed to load sites");
+      }
+
+      const nextSites = Array.isArray(data?.items) ? data.items : [];
+      setSites(nextSites);
+
+      if (!siteId && nextSites[0]?.id) {
+        setSiteId(nextSites[0].id);
+      }
+    } catch (err: any) {
+      setError(err?.message || "Failed to load sites");
+    } finally {
+      setBusySites(false);
+    }
+  }, [siteId]);
+
+  const loadDrives = React.useCallback(async () => {
+    if (!siteId) {
+      setDrives([]);
+      setDriveId("");
+      return;
+    }
+
+    setBusyDrives(true);
+    setError("");
+
+    try {
+      const res = await fetch(
+        `/sharepoint/drives?siteId=${encodeURIComponent(siteId)}`,
+        {
+          credentials: "include",
+        },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Failed to load libraries");
+      }
+
+      const nextDrives = Array.isArray(data?.items) ? data.items : [];
+      setDrives(nextDrives);
+
+      if (!nextDrives.some((x) => x.id === driveId)) {
+        setDriveId(nextDrives[0]?.id || "");
+      }
+    } catch (err: any) {
+      setError(err?.message || "Failed to load libraries");
+    } finally {
+      setBusyDrives(false);
+    }
+  }, [siteId, driveId]);
+
+  const loadItems = React.useCallback(async () => {
+    if (!siteId || !driveId) {
+      setItems([]);
+      return;
+    }
+
+    setBusyItems(true);
+    setError("");
+
+    try {
+      const qs = new URLSearchParams();
+      qs.set("siteId", siteId);
+      qs.set("driveId", driveId);
+      qs.set("path", folderPath || "");
+
+      const res = await fetch(`/sharepoint/items?${qs.toString()}`, {
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Failed to load files");
+      }
+
+      setItems(Array.isArray(data?.items) ? data.items : []);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load files");
+    } finally {
+      setBusyItems(false);
+    }
+  }, [siteId, driveId, folderPath]);
+
+  React.useEffect(() => {
+    loadSites();
+  }, [loadSites]);
+
+  React.useEffect(() => {
+    loadDrives();
+  }, [loadDrives]);
+
+  React.useEffect(() => {
+    loadItems();
+  }, [loadItems]);
+
+  async function handleCreateFolder() {
+    const name = newFolderName.trim();
+    if (!name || !siteId || !driveId) return;
+
+    setError("");
+
+    try {
+      const res = await fetch("/sharepoint/folders", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          siteId,
+          driveId,
+          parentPath: folderPath || "",
+          name,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Failed to create folder");
+      }
+
+      setNewFolderName("");
+      await loadItems();
+    } catch (err: any) {
+      setError(err?.message || "Failed to create folder");
+    }
+  }
+
+  function goToFolder(nextPath: string) {
+    setFolderPath(nextPath.replace(/^\/+/, ""));
+  }
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 16,
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: 12,
+        }}
+      >
+        <div
+          style={{
+            border: "1px solid #e5e7eb",
+            borderRadius: 14,
+            background: "#fff",
+            padding: 14,
+          }}
+        >
+          <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+            Site
+          </div>
+          <select
+            value={siteId}
+            onChange={(e) => {
+              setSiteId(e.target.value);
+              setDriveId("");
+              setFolderPath("");
+            }}
+            style={{
+              width: "100%",
+              border: "1px solid #d1d5db",
+              borderRadius: 10,
+              padding: "10px 12px",
+              background: "#fff",
+            }}
+          >
+            {busySites ? <option>Loading sites...</option> : null}
+            {!busySites && sites.length === 0 ? (
+              <option value="">No sites</option>
+            ) : null}
+            {sites.map((site) => (
+              <option key={site.id} value={site.id}>
+                {site.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div
+          style={{
+            border: "1px solid #e5e7eb",
+            borderRadius: 14,
+            background: "#fff",
+            padding: 14,
+          }}
+        >
+          <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+            Library
+          </div>
+          <select
+            value={driveId}
+            onChange={(e) => {
+              setDriveId(e.target.value);
+              setFolderPath("");
+            }}
+            style={{
+              width: "100%",
+              border: "1px solid #d1d5db",
+              borderRadius: 10,
+              padding: "10px 12px",
+              background: "#fff",
+            }}
+          >
+            {busyDrives ? <option>Loading libraries...</option> : null}
+            {!busyDrives && drives.length === 0 ? (
+              <option value="">No libraries</option>
+            ) : null}
+            {drives.map((drive) => (
+              <option key={drive.id} value={drive.id}>
+                {drive.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div
+          style={{
+            border: "1px solid #e5e7eb",
+            borderRadius: 14,
+            background: "#fff",
+            padding: 14,
+          }}
+        >
+          <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+            Mode
+          </div>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 12px",
+              borderRadius: 999,
+              background: mock ? "#fff7ed" : "#ecfdf5",
+              color: mock ? "#9a3412" : "#166534",
+              fontSize: 12,
+              fontWeight: 700,
+            }}
+          >
+            {mock ? "Mock Mode" : "Live Mode"}
+          </div>
+        </div>
+      </div>
+
+      <SharePointUpload
+        siteId={siteId}
+        driveId={driveId}
+        folderPath={folderPath}
+        onUploaded={loadItems}
+        disabled={!siteId || !driveId}
+      />
+
+      <div
+        style={{
+          border: "1px solid #e5e7eb",
+          borderRadius: 14,
+          background: "#fff",
+          padding: 14,
+          display: "flex",
+          gap: 10,
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            gap: 6,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => goToFolder("")}
+            style={{
+              border: "1px solid #d1d5db",
+              background: folderPath ? "#fff" : "#002c55",
+              color: folderPath ? "#111827" : "#fff",
+              borderRadius: 10,
+              padding: "8px 10px",
+              cursor: "pointer",
+            }}
+          >
+            Root
+          </button>
+
+          {parts.map((part, index) => {
+            const nextPath = parts.slice(0, index + 1).join("/");
+            const active = nextPath === folderPath;
+            return (
+              <button
+                key={nextPath}
+                type="button"
+                onClick={() => goToFolder(nextPath)}
+                style={{
+                  border: "1px solid #d1d5db",
+                  background: active ? "#002c55" : "#fff",
+                  color: active ? "#fff" : "#111827",
+                  borderRadius: 10,
+                  padding: "8px 10px",
+                  cursor: "pointer",
+                }}
+              >
+                {part}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            placeholder="New folder name"
+            style={{
+              border: "1px solid #d1d5db",
+              borderRadius: 10,
+              padding: "10px 12px",
+              minWidth: 180,
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleCreateFolder}
+            disabled={!newFolderName.trim() || !siteId || !driveId}
+            style={{
+              border: "none",
+              background: "#fd9d00",
+              color: "#111827",
+              borderRadius: 10,
+              padding: "10px 14px",
+              cursor: "pointer",
+              fontWeight: 700,
+            }}
+          >
+            Create Folder
+          </button>
+        </div>
+      </div>
+
+      <div
+        style={{
+          border: "1px solid #e5e7eb",
+          borderRadius: 14,
+          background: "#fff",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(220px, 1.8fr) 120px 140px 180px",
+            gap: 12,
+            padding: "12px 14px",
+            background: "#f8fafc",
+            borderBottom: "1px solid #e5e7eb",
+            fontSize: 12,
+            fontWeight: 700,
+            color: "#475569",
+          }}
+        >
+          <div>Name</div>
+          <div>Type</div>
+          <div>Size</div>
+          <div>Modified</div>
+        </div>
+
+        {busyItems ? (
+          <div style={{ padding: 18, fontSize: 14, color: "#6b7280" }}>
+            Loading items...
+          </div>
+        ) : items.length === 0 ? (
+          <div style={{ padding: 18, fontSize: 14, color: "#6b7280" }}>
+            No files or folders found.
+          </div>
+        ) : (
+          items.map((item) => (
+            <div
+              key={item.id}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "minmax(220px, 1.8fr) 120px 140px 180px",
+                gap: 12,
+                padding: "14px",
+                borderBottom: "1px solid #f1f5f9",
+                alignItems: "center",
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                {item.type === "folder" ? (
+                  <button
+                    type="button"
+                    onClick={() => goToFolder(item.path)}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      padding: 0,
+                      margin: 0,
+                      color: "#002c55",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    📁 {item.name}
+                  </button>
+                ) : item.webUrl ? (
+                  <a
+                    href={item.webUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      color: "#002c55",
+                      textDecoration: "none",
+                      fontWeight: 600,
+                    }}
+                  >
+                    📄 {item.name}
+                  </a>
+                ) : (
+                  <div style={{ fontWeight: 600 }}>📄 {item.name}</div>
+                )}
+                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
+                  {item.path}
+                </div>
+              </div>
+
+              <div style={{ fontSize: 13 }}>{item.type}</div>
+              <div style={{ fontSize: 13 }}>
+                {item.type === "file" ? formatBytes(item.size) : "—"}
+              </div>
+              <div style={{ fontSize: 13 }}>
+                {formatDate(item.lastModified)}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {error ? (
+        <div
+          style={{
+            border: "1px solid #fecaca",
+            background: "#fef2f2",
+            color: "#b91c1c",
+            borderRadius: 12,
+            padding: 12,
+            fontSize: 13,
+          }}
+        >
+          {error}
+        </div>
+      ) : null}
+    </div>
+  );
+}

@@ -1,0 +1,717 @@
+// src/pages/Dashboard.tsx
+import React from "react";
+import {
+  API_URL,
+  fetchDashboardSummary,
+  fetchGlobalInsights,
+  type DashboardSummary,
+  type GlobalInsightsResponse,
+} from "../../api";
+import "./Dashboard.css";
+
+function money(n: number) {
+  return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
+}
+
+function num(n: number | undefined | null) {
+  return Number(n ?? 0);
+}
+
+function formatInt(n: number | undefined | null) {
+  return num(n).toLocaleString();
+}
+
+function timeAgo(value?: string | null) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+
+  const diffMs = Date.now() - d.getTime();
+  const sec = Math.floor(diffMs / 1000);
+  const min = Math.floor(sec / 60);
+  const hr = Math.floor(min / 60);
+  const day = Math.floor(hr / 24);
+
+  if (sec < 60) return "just now";
+  if (min < 60) return `${min} min${min === 1 ? "" : "s"} ago`;
+  if (hr < 24) return `${hr} hour${hr === 1 ? "" : "s"} ago`;
+  return `${day} day${day === 1 ? "" : "s"} ago`;
+}
+
+function fmtDate(value?: string | null) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString();
+}
+
+const FAILED_CLIENT_NAME_MAP: Record<number, string> = {
+  25: "Michelle Pham / Superior Blacktop Services",
+  26: "Mark Walker / Mark Walker Ministries",
+  30: "Darry Beckwith, Jr. / Darry Beckwith Foundation",
+  31: "Stephani Fowlkes",
+  32: "Racia Randolph / Alec’Dair Scott Global",
+  44: "Raymar Jones / Nolimitsmedia",
+  45: "Kenneth Mcrae",
+};
+
+const aiCardStyle: React.CSSProperties = {
+  border: "1px solid rgba(15, 23, 42, 0.08)",
+  borderRadius: 18,
+  padding: 16,
+  background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
+  boxShadow: "0 10px 25px rgba(15, 23, 42, 0.04)",
+};
+
+export default function Dashboard() {
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState("");
+  const [summary, setSummary] = React.useState<DashboardSummary | null>(null);
+  const [globalInsights, setGlobalInsights] =
+    React.useState<GlobalInsightsResponse | null>(null);
+
+  const loadDashboard = React.useCallback(async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const [next, ai] = await Promise.all([
+        fetchDashboardSummary(),
+        fetchGlobalInsights().catch(() => null),
+      ]);
+      setSummary(next);
+      setGlobalInsights(ai);
+    } catch (e: any) {
+      setError(String(e?.message || "Failed to load dashboard"));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  const latestRun = React.useMemo(() => summary?.latestRun ?? null, [summary]);
+  const latestStats = React.useMemo(
+    () => summary?.latestStats ?? null,
+    [summary],
+  );
+
+  const counts = React.useMemo(
+    () => ({
+      clients: num(summary?.counts?.clients),
+      invoices: num(summary?.counts?.invoices),
+      services: num(summary?.counts?.services),
+      failedClients: num(summary?.counts?.failedClients),
+    }),
+    [summary],
+  );
+
+  const estimatedMRR = React.useMemo(() => {
+    return counts.services * 99;
+  }, [counts.services]);
+
+  const stats = React.useMemo(
+    () => [
+      {
+        label: "Synced Clients",
+        value: formatInt(counts.clients),
+        sub: latestRun
+          ? `Last sync ${timeAgo(latestRun.finished_at || latestRun.started_at)}`
+          : "No sync history yet",
+      },
+      {
+        label: "Synced Invoices",
+        value: formatInt(counts.invoices),
+        sub: latestStats
+          ? `${formatInt(latestStats.invoices_upserted)} updated in latest run`
+          : "Waiting for first successful sync",
+      },
+      {
+        label: "Active Services Cache",
+        value: formatInt(counts.services),
+        sub: latestStats
+          ? `${formatInt(latestStats.services_upserted)} service rows synced`
+          : "Waiting for first successful sync",
+      },
+      {
+        label: "Service Sync Issues",
+        value: formatInt(counts.failedClients),
+        sub:
+          counts.failedClients > 0
+            ? "Malformed WHMCS UTF-8 data detected"
+            : "No service sync issues in latest run",
+      },
+    ],
+    [counts, latestRun, latestStats],
+  );
+
+  const trendBars = React.useMemo(() => {
+    const raw = (summary?.trend ?? []).map((item) => ({
+      created: num(item.created),
+      completed: num(item.completed),
+    }));
+
+    const max = Math.max(1, ...raw.flatMap((r) => [r.created, r.completed]));
+
+    return raw.map((r) => ({
+      createdHeight: Math.max(10, Math.round((r.created / max) * 100)),
+      completedHeight: Math.max(10, Math.round((r.completed / max) * 100)),
+      created: r.created,
+      completed: r.completed,
+    }));
+  }, [summary]);
+
+  const recentActivity = React.useMemo(() => {
+    const items: Array<{ main: string; sub: string }> = [];
+
+    if (latestRun) {
+      items.push({
+        main: `WHMCS sync ${
+          latestRun.status === "success"
+            ? "completed"
+            : latestRun.status || "finished"
+        }`,
+        sub: timeAgo(latestRun.finished_at || latestRun.started_at),
+      });
+    }
+
+    if (latestStats?.clients_upserted) {
+      items.push({
+        main: `${formatInt(latestStats.clients_upserted)} clients synchronized`,
+        sub: "Latest sync run",
+      });
+    }
+
+    if (latestStats?.invoices_upserted) {
+      items.push({
+        main: `${formatInt(latestStats.invoices_upserted)} invoices refreshed`,
+        sub: "Latest sync run",
+      });
+    }
+
+    if (latestStats?.services_upserted) {
+      items.push({
+        main: `${formatInt(latestStats.services_upserted)} services refreshed`,
+        sub: "Latest sync run",
+      });
+    }
+
+    if (num(latestStats?.services_failed_clients) > 0) {
+      items.push({
+        main: `${formatInt(
+          latestStats?.services_failed_clients,
+        )} client service records need WHMCS cleanup`,
+        sub: "Malformed UTF-8 in GetClientsProducts",
+      });
+    }
+
+    return items.slice(0, 5);
+  }, [latestRun, latestStats]);
+
+  const failedClientsList = React.useMemo(() => {
+    const ids = latestStats?.services_failed_client_ids ?? [];
+    return ids.map((id) => ({
+      id,
+      name: FAILED_CLIENT_NAME_MAP[id] || `WHMCS Client #${id}`,
+    }));
+  }, [latestStats]);
+
+  const aiOverviewCards = React.useMemo(
+    () => [
+      {
+        label: "Healthy Clients",
+        value: formatInt(globalInsights?.overview?.healthy_clients),
+        sub: "Accounts currently in healthy AI band",
+      },
+      {
+        label: "High Risk Clients",
+        value: formatInt(globalInsights?.overview?.high_risk_clients),
+        sub: "Accounts needing immediate review",
+      },
+      {
+        label: "Renewal Value (30d)",
+        value: money(num(globalInsights?.overview?.renewal_value_30d)),
+        sub: `${formatInt(globalInsights?.overview?.renewals_due_30d)} renewals due soon`,
+      },
+      {
+        label: "Outstanding Balance",
+        value: money(num(globalInsights?.overview?.total_balance_due)),
+        sub: "Open balance across visible accounts",
+      },
+    ],
+    [globalInsights],
+  );
+
+  return (
+    <div className="dash">
+      <div className="dashHeader">
+        <div>
+          <div className="dashKicker">Overview</div>
+          <h1 className="dashTitle">Dashboard</h1>
+          <div className="dashSub">
+            Live WHMCS sync metrics, recent activity, integration health, and
+            AI-powered client insights.
+          </div>
+        </div>
+
+        <div className="dashActions">
+          <button className="dashBtnPrimary" onClick={loadDashboard}>
+            Refresh
+          </button>
+          <button
+            className="dashBtnGhost"
+            onClick={() =>
+              window.open(`${API_URL}/sync/whmcs/status`, "_blank")
+            }
+          >
+            View Sync Status
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="dashPanel">
+          <div className="dashPanelTitle">Loading dashboard…</div>
+          <div className="dashPanelSub">
+            Pulling live sync data from the API.
+          </div>
+        </div>
+      ) : error ? (
+        <div className="dashPanel">
+          <div className="dashPanelTitle">Dashboard failed to load</div>
+          <div className="dashPanelSub">{error}</div>
+        </div>
+      ) : (
+        <>
+          <div className="dashGridCards">
+            {stats.map((s) => (
+              <div key={s.label} className="dashCard">
+                <div className="dashCardTop">
+                  <div className="dashCardLabel">{s.label}</div>
+                  <div className="dashChip">
+                    {summary?.configured === false ? "Config" : "Live"}
+                  </div>
+                </div>
+                <div className="dashCardValue">{s.value}</div>
+                <div className="dashCardSub">{s.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          {globalInsights ? (
+            <div className="dashPanel" style={{ marginBottom: 20 }}>
+              <div className="dashPanelHead">
+                <div>
+                  <div className="dashPanelTitle">AI Global Insights</div>
+                  <div className="dashPanelSub">
+                    Churn risk, revenue opportunities, renewals, and operational
+                    alerts across the client portfolio.
+                  </div>
+                </div>
+                <div className="dashChip">
+                  Updated {timeAgo(globalInsights.generated_at)}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+                  gap: 14,
+                  marginBottom: 16,
+                }}
+              >
+                {aiOverviewCards.map((card) => (
+                  <div key={card.label} style={aiCardStyle}>
+                    <div className="dashCardLabel">{card.label}</div>
+                    <div
+                      style={{
+                        fontSize: 26,
+                        fontWeight: 700,
+                        marginTop: 6,
+                        color: "#0f172a",
+                      }}
+                    >
+                      {card.value}
+                    </div>
+                    <div className="dashCardSub" style={{ marginTop: 4 }}>
+                      {card.sub}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    "minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr)",
+                  gap: 16,
+                }}
+              >
+                <div style={aiCardStyle}>
+                  <div className="dashListTitle">Top Risk Clients</div>
+                  {(globalInsights.top_risk_clients ?? []).length ? (
+                    <div className="dashList" style={{ marginTop: 10 }}>
+                      {globalInsights.top_risk_clients?.map((item) => (
+                        <div className="dashListItem" key={item.id}>
+                          <div className="dashBullet" />
+                          <div>
+                            <div className="dashListMain">
+                              <b>{item.name}</b> • Risk {item.risk_score}
+                            </div>
+                            <div className="dashListSub">
+                              {(item.reasons ?? []).join(" • ") ||
+                                "No major reasons"}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="dashHint">
+                      No elevated risk accounts detected.
+                    </div>
+                  )}
+                </div>
+
+                <div style={aiCardStyle}>
+                  <div className="dashListTitle">Revenue Opportunities</div>
+                  {(globalInsights.opportunities ?? []).length ? (
+                    <div className="dashList" style={{ marginTop: 10 }}>
+                      {globalInsights.opportunities?.map((item) => (
+                        <div className="dashListItem" key={item.key}>
+                          <div className="dashBullet" />
+                          <div>
+                            <div className="dashListMain">
+                              <b>{formatInt(item.count)}</b> • {item.title}
+                            </div>
+                            <div className="dashListSub">
+                              {item.description || "Expansion signal detected."}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="dashHint">No opportunity signals yet.</div>
+                  )}
+                </div>
+
+                <div style={aiCardStyle}>
+                  <div className="dashListTitle">Operations & Alerts</div>
+                  <div className="dashList" style={{ marginTop: 10 }}>
+                    <div className="dashListItem">
+                      <div className="dashBullet" />
+                      <div>
+                        <div className="dashListMain">
+                          Blocked Tasks:{" "}
+                          <b>
+                            {formatInt(
+                              globalInsights.operations?.blocked_tasks,
+                            )}
+                          </b>
+                        </div>
+                        <div className="dashListSub">
+                          Overdue tasks:{" "}
+                          {formatInt(globalInsights.operations?.overdue_tasks)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="dashListItem">
+                      <div className="dashBullet" />
+                      <div>
+                        <div className="dashListMain">
+                          Urgent Tickets:{" "}
+                          <b>
+                            {formatInt(
+                              globalInsights.operations?.urgent_tickets,
+                            )}
+                          </b>
+                        </div>
+                        <div className="dashListSub">
+                          Stale tickets:{" "}
+                          {formatInt(globalInsights.operations?.stale_tickets)}
+                        </div>
+                      </div>
+                    </div>
+                    {(globalInsights.alerts ?? [])
+                      .slice(0, 3)
+                      .map((item, idx) => (
+                        <div className="dashListItem" key={`${item}-${idx}`}>
+                          <div className="dashBullet" />
+                          <div>
+                            <div className="dashListMain">{item}</div>
+                            <div className="dashListSub">AI alert</div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="dashGridMain">
+            <div className="dashPanel">
+              <div className="dashPanelHead">
+                <div>
+                  <div className="dashPanelTitle">Sync Trend</div>
+                  <div className="dashPanelSub">
+                    Recent WHMCS runs: invoices synced vs services synced
+                  </div>
+                </div>
+                <div className="dashPanelRight">
+                  <span className="dashLegend">
+                    <span className="dot blue" /> Invoices
+                  </span>
+                  <span className="dashLegend">
+                    <span className="dot gold" /> Services
+                  </span>
+                </div>
+              </div>
+
+              <div className="dashBars">
+                {trendBars.length ? (
+                  trendBars.map((b, idx) => (
+                    <div
+                      className="dashBarWrap"
+                      key={idx}
+                      title={`Invoices: ${b.created} • Services: ${b.completed}`}
+                    >
+                      <div
+                        className="dashBar blue"
+                        style={{ height: `${b.createdHeight}%` }}
+                      />
+                      <div
+                        className="dashBar gold"
+                        style={{ height: `${b.completedHeight}%` }}
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <div className="dashHint">No sync history yet.</div>
+                )}
+              </div>
+
+              <div className="dashPanelFoot">
+                <div className="dashHint">
+                  Estimated recurring value snapshot:{" "}
+                  <b>{money(estimatedMRR)}</b>. Replace this with real MRR once
+                  we add a financial summary endpoint.
+                </div>
+              </div>
+            </div>
+
+            <div className="dashPanel">
+              <div className="dashPanelHead">
+                <div>
+                  <div className="dashPanelTitle">Quick Actions</div>
+                  <div className="dashPanelSub">Common operations</div>
+                </div>
+              </div>
+
+              <div className="dashQuick">
+                <button className="dashQuickItem">
+                  <div className="dashQuickIcon">👤</div>
+                  <div>
+                    <div className="dashQuickTitle">Add Client</div>
+                    <div className="dashQuickSub">
+                      Create a new client profile
+                    </div>
+                  </div>
+                </button>
+
+                <button className="dashQuickItem">
+                  <div className="dashQuickIcon">🧾</div>
+                  <div>
+                    <div className="dashQuickTitle">Invoices</div>
+                    <div className="dashQuickSub">
+                      Review billing sync totals
+                    </div>
+                  </div>
+                </button>
+
+                <button className="dashQuickItem" onClick={loadDashboard}>
+                  <div className="dashQuickIcon">🔄</div>
+                  <div>
+                    <div className="dashQuickTitle">Refresh Sync</div>
+                    <div className="dashQuickSub">
+                      Pull the latest WHMCS status
+                    </div>
+                  </div>
+                </button>
+
+                <button className="dashQuickItem">
+                  <div className="dashQuickIcon">⚠️</div>
+                  <div>
+                    <div className="dashQuickTitle">Service Issues</div>
+                    <div className="dashQuickSub">
+                      Review failed WHMCS clients
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <div className="dashDivider" />
+
+              <div className="dashList">
+                <div className="dashListTitle">Recent Activity</div>
+
+                {recentActivity.length ? (
+                  recentActivity.map((item, idx) => (
+                    <div className="dashListItem" key={`${item.main}-${idx}`}>
+                      <div className="dashBullet" />
+                      <div>
+                        <div className="dashListMain">{item.main}</div>
+                        <div className="dashListSub">{item.sub}</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="dashHint">No recent activity yet.</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="dashGridMain">
+            <div className="dashPanel">
+              <div className="dashPanelHead">
+                <div>
+                  <div className="dashPanelTitle">
+                    WHMCS Service Data Cleanup
+                  </div>
+                  <div className="dashPanelSub">
+                    Clients whose product/service records could not be
+                    JSON-encoded by WHMCS
+                  </div>
+                </div>
+              </div>
+
+              {failedClientsList.length ? (
+                <div className="dashList">
+                  {failedClientsList.map((item) => (
+                    <div className="dashListItem" key={item.id}>
+                      <div className="dashBullet" />
+                      <div>
+                        <div className="dashListMain">
+                          <b>#{item.id}</b> — {item.name}
+                        </div>
+                        <div className="dashListSub">
+                          Check product name, notes, custom fields, domain, and
+                          copied text for malformed encoding.
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="dashHint">
+                  No failed service clients in the latest run.
+                </div>
+              )}
+            </div>
+
+            <div className="dashPanel">
+              <div className="dashPanelHead">
+                <div>
+                  <div className="dashPanelTitle">Latest Sync Summary</div>
+                  <div className="dashPanelSub">
+                    Most recent WHMCS run details
+                  </div>
+                </div>
+              </div>
+
+              <div className="dashList">
+                <div className="dashListItem">
+                  <div className="dashBullet" />
+                  <div>
+                    <div className="dashListMain">
+                      Status: <b>{latestRun?.status || "unknown"}</b>
+                    </div>
+                    <div className="dashListSub">
+                      Finished{" "}
+                      {timeAgo(latestRun?.finished_at || latestRun?.started_at)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="dashListItem">
+                  <div className="dashBullet" />
+                  <div>
+                    <div className="dashListMain">
+                      Clients seen:{" "}
+                      <b>{formatInt(latestStats?.clients_seen)}</b>
+                    </div>
+                    <div className="dashListSub">
+                      Total WHMCS clients processed in latest run
+                    </div>
+                  </div>
+                </div>
+
+                <div className="dashListItem">
+                  <div className="dashBullet" />
+                  <div>
+                    <div className="dashListMain">
+                      Invoices synced:{" "}
+                      <b>{formatInt(latestStats?.invoices_upserted)}</b>
+                    </div>
+                    <div className="dashListSub">
+                      Invoice cache refreshed from WHMCS
+                    </div>
+                  </div>
+                </div>
+
+                <div className="dashListItem">
+                  <div className="dashBullet" />
+                  <div>
+                    <div className="dashListMain">
+                      Services synced:{" "}
+                      <b>{formatInt(latestStats?.services_upserted)}</b>
+                    </div>
+                    <div className="dashListSub">
+                      Service cache refreshed from WHMCS
+                    </div>
+                  </div>
+                </div>
+
+                <div className="dashListItem">
+                  <div className="dashBullet" />
+                  <div>
+                    <div className="dashListMain">
+                      Failed service clients:{" "}
+                      <b>{formatInt(latestStats?.services_failed_clients)}</b>
+                    </div>
+                    <div className="dashListSub">
+                      WHMCS-side malformed UTF-8 product data
+                    </div>
+                  </div>
+                </div>
+
+                {globalInsights?.renewals?.next?.[0] ? (
+                  <div className="dashListItem">
+                    <div className="dashBullet" />
+                    <div>
+                      <div className="dashListMain">
+                        Next renewal:{" "}
+                        <b>{globalInsights.renewals.next[0].name}</b>
+                      </div>
+                      <div className="dashListSub">
+                        {fmtDate(
+                          globalInsights.renewals.next[0].next_renewal_date,
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

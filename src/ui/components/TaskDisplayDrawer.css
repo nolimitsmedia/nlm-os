@@ -1,0 +1,939 @@
+/* src/ui/components/TaskDisplayDrawer.css */
+
+.nlmFullDrawerOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(2, 6, 23, 0.44);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.nlmFullDrawerSheet {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  bottom: 18px;
+  left: 18px;
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 30px 90px rgba(2, 6, 23, 0.28);
+  overflow: hidden;
+  display: flex;
+  animation: nlmDrawerEnter 180ms ease;
+}
+
+.nlmClickUpWorkspaceSheet {
+  padding: 0;
+}
+
+@keyframes nlmDrawerEnter {
+  from {
+    opacity: 0.85;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nlmClickUpMiniNav {
+  width: 210px;
+  min-width: 210px;
+  border-right: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, #f8fafc, #f1f5f9);
+  display: flex;
+  flex-direction: column;
+  padding: 14px 10px;
+  gap: 10px;
+}
+
+.nlmClickUpMiniNavTop {
+  padding: 6px 8px 8px;
+}
+
+.nlmClickUpMiniNavTitle {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.5);
+}
+
+.nlmClickUpMiniNavSub {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #002c55;
+}
+
+.nlmClickUpMiniNavSection {
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(15, 23, 42, 0.48);
+}
+
+.nlmClickUpClientSearch {
+  padding: 2px 6px 8px;
+}
+
+.nlmClickUpClientSearch input {
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  font-size: 12px;
+  outline: none;
+  background: #fff;
+}
+
+.nlmClickUpMiniNavList {
+  display: grid;
+  gap: 5px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.nlmClickUpMiniNavItem {
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #0f172a;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1.25;
+}
+
+.nlmClickUpMiniNavItem:hover {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.nlmClickUpMiniNavItem.active {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.08);
+  color: #002c55;
+  box-shadow: 0 8px 18px rgba(2, 6, 23, 0.06);
+}
+
+.nlmClickUpWorkspaceMain {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.nlmFullDrawerHeader {
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.96), #ffffff);
+}
+
+.nlmFullDrawerHeaderLeft {
+  min-width: 0;
+}
+
+.nlmFullDrawerEyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(15, 23, 42, 0.56);
+  display: none;
+}
+
+.nlmFullDrawerTitle {
+  margin-top: 2px;
+  font-size: 16px;
+  line-height: 1.1;
+  font-weight: 700;
+  color: #002c55;
+}
+
+.nlmFullDrawerSub {
+  margin-top: 4px;
+  color: rgba(15, 23, 42, 0.68);
+  font-size: 13px;
+}
+
+.nlmFullDrawerHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nlmFullDrawerPrimaryBtn,
+.nlmFullDrawerSecondaryBtn {
+  min-width: 112px;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nlmFullDrawerPrimaryBtn {
+  border: none;
+  background: linear-gradient(135deg, #002c55, #2563eb);
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(0, 44, 85, 0.16);
+}
+
+.nlmFullDrawerSecondaryBtn {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: #002c55;
+}
+
+.nlmFullDrawerPrimaryBtn:disabled,
+.nlmFullDrawerSecondaryBtn:disabled,
+.nlmMiniActionBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.nlmClickUpWorkspaceTopbar {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+}
+
+.nlmClickUpViewToggle {
+  display: flex;
+  gap: 8px;
+  padding: 10px 20px 0;
+}
+
+.nlmClickUpViewToggle button {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: #fff;
+  color: #334155;
+  padding: 8px 13px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nlmClickUpViewToggle button.active {
+  background: #002c55;
+  color: #fff;
+  border-color: #002c55;
+}
+
+.nlmFullDrawerToolbar {
+  padding: 12px 20px;
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) minmax(150px, 190px) minmax(
+      220px,
+      1fr
+    );
+  gap: 12px;
+}
+
+.nlmClickUpToolbar {
+  border-bottom: 0;
+}
+
+.nlmFullDrawerField {
+  display: grid;
+  gap: 6px;
+}
+
+.nlmFullDrawerField label {
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(15, 23, 42, 0.72);
+}
+
+.nlmFullDrawerField input,
+.nlmFullDrawerField select,
+.nlmInlineInput,
+.nlmInlineSelect {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 10px;
+  background: #fff;
+  color: #0f172a;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.nlmFullDrawerField input:focus,
+.nlmFullDrawerField select:focus,
+.nlmInlineInput:focus,
+.nlmInlineSelect:focus {
+  border-color: rgba(59, 130, 246, 0.55);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
+}
+
+.nlmFullDrawerStats {
+  padding: 12px 20px 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.nlmFullDrawerStatCard {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.nlmFullDrawerStatCard span {
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(15, 23, 42, 0.58);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.nlmFullDrawerStatCard strong {
+  font-size: 16px;
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.nlmFullDrawerBody {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 12px 20px 18px;
+}
+
+.nlmTaskSections {
+  display: grid;
+  gap: 10px;
+}
+
+.nlmTaskSection {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.nlmTaskSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: #f8fafc;
+}
+
+.nlmTaskSectionHeader strong {
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.7);
+}
+
+.nlmTaskSectionBadge {
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nlmTaskSectionBadge--not-started,
+.nlmTaskSectionBadge--open,
+.nlmTaskSectionBadge--to-do {
+  background: rgba(180, 35, 24, 0.1);
+  color: #b42318;
+}
+
+.nlmTaskSectionBadge--in-progress,
+.nlmTaskSectionBadge--review {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+}
+
+.nlmTaskSectionBadge--on-hold {
+  background: rgba(245, 158, 11, 0.14);
+  color: #b45309;
+}
+
+.nlmTaskSectionBadge--completed,
+.nlmTaskSectionBadge--complete,
+.nlmTaskSectionBadge--closed {
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+}
+
+.nlmTaskTableWrap {
+  overflow: auto;
+}
+
+.nlmTaskTable {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+}
+
+.nlmTaskTable th,
+.nlmTaskTable td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  vertical-align: top;
+  text-align: left;
+}
+
+.nlmTaskTable th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(15, 23, 42, 0.54);
+  font-weight: 900;
+  background: #fff;
+}
+
+.nlmTaskNameCell {
+  min-width: 220px;
+}
+
+.nlmTaskSubText {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: rgba(15, 23, 42, 0.56);
+}
+
+.nlmTaskTableActionsCol {
+  width: 140px;
+}
+
+.nlmTaskTableActions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nlmMiniActionBtn {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: #fff;
+  color: #002c55;
+  border-radius: 9px;
+  padding: 7px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.nlmMiniActionBtnDanger {
+  color: #b42318;
+  border-color: rgba(180, 35, 24, 0.14);
+}
+
+.nlmBoardGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(240px, 1fr));
+  gap: 12px;
+  min-width: 980px;
+}
+
+.nlmBoardColumn {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+}
+
+.nlmBoardColumnHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+}
+
+.nlmBoardColumnHeader strong {
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.7);
+}
+
+.nlmBoardColumnBody {
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.nlmBoardCard {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+  border-radius: 14px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.05);
+}
+
+.nlmBoardTitleInput {
+  font-weight: 800;
+}
+
+.nlmBoardMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: rgba(15, 23, 42, 0.6);
+}
+
+.nlmBoardCardActions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nlmBoardEmpty {
+  border: 1px dashed rgba(15, 23, 42, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 14px;
+  text-align: center;
+  color: rgba(15, 23, 42, 0.56);
+  font-size: 12px;
+}
+
+.nlmFullDrawerEmptyState {
+  min-height: 300px;
+  border: 1px dashed rgba(15, 23, 42, 0.12);
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  padding: 20px;
+}
+
+.nlmFullDrawerEmptyTitle {
+  font-size: 18px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.nlmFullDrawerEmptySub {
+  margin-top: 6px;
+  color: rgba(15, 23, 42, 0.62);
+  max-width: 520px;
+  font-size: 13px;
+}
+
+@media (max-width: 1220px) {
+  .nlmBoardGrid {
+    grid-template-columns: repeat(2, minmax(240px, 1fr));
+    min-width: 0;
+  }
+}
+
+@media (max-width: 980px) {
+  .nlmFullDrawerSheet {
+    top: 10px;
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+    border-radius: 18px;
+    flex-direction: column;
+  }
+
+  .nlmClickUpMiniNav {
+    width: 100%;
+    min-width: 0;
+    border-right: 0;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    max-height: 220px;
+  }
+
+  .nlmFullDrawerHeader,
+  .nlmFullDrawerToolbar,
+  .nlmFullDrawerBody {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .nlmFullDrawerHeader {
+    flex-direction: column;
+  }
+
+  .nlmFullDrawerToolbar,
+  .nlmFullDrawerStats {
+    grid-template-columns: 1fr;
+  }
+
+  .nlmClickUpViewToggle {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+@media (max-width: 720px) {
+  .nlmFullDrawerTitle {
+    font-size: 20px;
+  }
+
+  .nlmBoardGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.nlmTaskTitleBtn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nlmTaskTitleBtn:hover {
+  color: #1d4ed8;
+}
+
+.nlmTaskTitleBtnBoard {
+  width: 100%;
+}
+
+.nlmAssigneeCellWrap {
+  position: relative;
+}
+
+.nlmAssigneeChipRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nlmAssigneeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  background: rgba(37, 99, 235, 0.06);
+  padding: 4px 8px 4px 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.nlmAssigneeChipAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(37, 99, 235, 0.14);
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.nlmAssigneeChipLabel {
+  max-width: 84px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nlmAssigneeManageBtn {
+  border: 1px dashed rgba(15, 23, 42, 0.18);
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+}
+
+.nlmAssigneeEmpty {
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.55);
+}
+
+.nlmAssigneeMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  max-height: 240px;
+  overflow: auto;
+  z-index: 8;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 18px 36px rgba(2, 6, 23, 0.12);
+  padding: 8px;
+}
+
+.nlmAssigneeMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.nlmAssigneeMenuItem:hover {
+  background: #f8fafc;
+}
+
+.nlmAssigneeMenuEmpty {
+  padding: 10px;
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.55);
+}
+
+.nlmDueDateInput {
+  min-width: 140px;
+}
+
+.nlmDueDateOverdue {
+  color: #b91c1c;
+  border-color: rgba(185, 28, 28, 0.3);
+  background: rgba(254, 242, 242, 0.9);
+  font-weight: 700;
+}
+
+.nlmBoardMetaOverdue {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+/* popup + chip fixes */
+.nlmTaskSection,
+.nlmTaskTableWrap,
+.nlmTaskTable,
+.nlmTaskTable td,
+.nlmTaskTable th,
+.nlmFullDrawerBody {
+  overflow: visible;
+}
+
+.nlmAssigneeMenuWrap {
+  position: relative;
+  overflow: visible;
+}
+
+.nlmAssigneeChips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-height: 32px;
+}
+
+.nlmAssigneeChip {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.nlmAssigneeAddBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px dashed rgba(15, 23, 42, 0.2);
+  background: #fff;
+  color: #334155;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.nlmAssigneePopover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  max-width: 280px;
+  max-height: 240px;
+  overflow: auto;
+  z-index: 9999;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 18px 44px rgba(2, 6, 23, 0.18);
+  padding: 8px;
+}
+
+.nlmAssigneePopoverItem {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.nlmAssigneePopoverItem:hover,
+.nlmAssigneePopoverItem.active {
+  background: #f8fafc;
+}
+
+.nlmAssigneePopoverAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.nlmAssigneePopoverLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.nlmAssigneePopoverCheck {
+  color: #16a34a;
+  font-weight: 900;
+}
+
+.nlmDueDateOverdue {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.nlmConfirmOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  background: rgba(2, 6, 23, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.nlmConfirmDialog {
+  width: min(460px, 100%);
+  border-radius: 22px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 30px 80px rgba(2, 6, 23, 0.25);
+  padding: 22px;
+}
+
+.nlmConfirmTitle {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.nlmConfirmMessage {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(15, 23, 42, 0.72);
+}
+
+.nlmConfirmActions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.nlmConfirmBtn {
+  min-width: 132px;
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 15px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  background: linear-gradient(135deg, #002c55, #2563eb);
+  color: #fff;
+}
+
+.nlmConfirmBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.nlmConfirmBtnDanger {
+  background: linear-gradient(135deg, #b91c1c, #ef4444);
+}
+
+.nlmTaskNameButton {
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nlmTaskNameButton:hover {
+  color: #1f5bd3;
+}
+
+.nlmTaskClientCell {
+  min-width: 140px;
+}
+
+.nlmTaskClientText {
+  display: inline-block;
+  width: 100%;
+  color: #1f2937;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.nlmTaskClientText[data-client="—"] {
+  color: #94a3b8;
+  font-weight: 400;
+}
