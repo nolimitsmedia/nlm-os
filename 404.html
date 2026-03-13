@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>NLM OS</title>
+    <script>
+      (function () {
+        var l = window.location;
+        var repoBase = "/nlm-os";
+        var path = l.pathname;
+
+        if (path.indexOf(repoBase) !== 0) {
+          window.location.replace(repoBase + "/");
+          return;
+        }
+
+        var route = path.slice(repoBase.length);
+        var query = l.search || "";
+        var hash = l.hash || "";
+
+        var target =
+          repoBase + "/?p=" + encodeURIComponent(route + query + hash);
+
+        window.location.replace(target);
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
