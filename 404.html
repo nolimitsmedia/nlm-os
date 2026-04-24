@@ -14,14 +14,15 @@
           return;
         }
 
-        var route = path.slice(repoBase.length);
+        var route = path.slice(repoBase.length) || "/";
         var query = l.search || "";
         var hash = l.hash || "";
 
-        var target =
-          repoBase + "/?p=" + encodeURIComponent(route + query + hash);
+        var fullRoute = route + query + hash;
 
-        window.location.replace(target);
+        window.location.replace(
+          repoBase + "/?p=" + encodeURIComponent(fullRoute),
+        );
       })();
     </script>
   </head>
